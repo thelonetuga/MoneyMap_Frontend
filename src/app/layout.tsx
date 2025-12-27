@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar"; // <--- Importar a Navbar
+
+// 1. IMPORTAR A NAVBAR
+import Navbar from "./components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MoneyMap",
-  description: "O seu gestor financeiro pessoal",
+  title: "Finance App",
+  description: "Gestão Financeira Pessoal",
 };
 
 export default function RootLayout({
@@ -18,10 +20,10 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className={inter.className}>
-        {/* A Navbar fica aqui, fora do 'children' */}
+
+        {/* 2. ADICIONAR AQUI, ANTES DOS CHILDREN */}
         <Navbar />
-        
-        {/* O conteúdo das páginas (page.tsx) é injetado aqui */}
+
         {children}
       </body>
     </html>
