@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 
 // 1. IMPORTAR AQUI
-import { AuthProvider } from "@/context/AuthContext"; 
+import { AuthProvider } from "../context/AuthContext"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
