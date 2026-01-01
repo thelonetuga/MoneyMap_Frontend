@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-
-// 1. IMPORTAR A NAVBAR
 import Navbar from "./components/Navbar";
+
+// 1. IMPORTAR AQUI
+import { AuthProvider } from "@/context/AuthContext"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Finance App",
+  title: "MoneyMap",
   description: "Gestão Financeira Pessoal",
 };
 
@@ -20,11 +21,11 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className={inter.className}>
-
-        {/* 2. ADICIONAR AQUI, ANTES DOS CHILDREN */}
-        <Navbar />
-
-        {children}
+        {/* 2. ENVOLVER TUDO (Navbar e Children) COM O PROVIDER */}
+        <AuthProvider>
+            <Navbar />
+            {children}
+        </AuthProvider>
       </body>
     </html>
   );

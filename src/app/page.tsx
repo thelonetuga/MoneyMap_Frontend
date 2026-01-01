@@ -86,9 +86,6 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-gray-900">MoneyMap 🌍</h1>
             <p className="text-gray-500 text-sm">Visão geral financeira</p>
           </div>
-          <button onClick={() => { localStorage.removeItem('token'); router.push('/login'); }} className="text-sm text-red-500 hover:text-red-700 font-bold bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
-            Sair 🚪
-          </button>
         </header>
 
         {/* 1. CARTÕES DE RESUMO */}
