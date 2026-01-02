@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // O AuthContext já faz o push, mas podemos manter por segurança
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext'; // <--- IMPORTANTE: Usar o Contexto
+import api from '@/services/api'; // <--- IMPORTANTE: Usar o Axios configurado
 
 export default function LoginPage() {
-    const router = useRouter();
+    const { login } = useAuth(); // Vamos usar a função login do contexto
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -16,38 +18,40 @@ export default function LoginPage() {
         setLoading(true);
         setError('');
 
-        // O FastAPI espera os dados em formato "Form Data", não JSON!
-        // E exige que o campo de email se chame "username".
-        const formData = new FormData();
-        formData.append('username', email);
-        formData.append('password', password);
-
         try {
-            const res = await fetch('http://127.0.0.1:8000/token', {
-                method: 'POST',
-                body: formData,
+            // 1. Preparar os dados no formato OAuth2 padrão (x-www-form-urlencoded)
+            const params = new URLSearchParams();
+            params.append('username', email); // Mapear email para username
+            params.append('password', password);
+
+            // 2. Enviar pedido usando o cliente API
+            const res = await api.post('/token', params, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
             });
 
-            if (!res.ok) {
-                throw new Error('Email ou password incorretos');
-            }
-
-            const data = await res.json();
-
-            // GUARDAR O TOKEN NO BROWSER
-            localStorage.setItem('token', data.access_token);
-
-            // Redirecionar para o Dashboard
-            router.push('/');
+            // 3. Usar a função login do contexto
+            // Isto guarda o token E atualiza o estado global da App imediatamente
+            login(res.data.access_token); 
+            
+            // Nota: O router.push('/') geralmente é feito dentro do login(), 
+            // mas não faz mal estar lá também.
 
         } catch (err: any) {
-            setError(err.message);
+            console.error(err);
+            // Mensagem de erro amigável
+            if (err.response?.status === 401) {
+                setError('Email ou password incorretos.');
+            } else {
+                setError('Erro ao ligar ao servidor. Tente novamente.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    // Classes de estilo (iguais ao formulário anterior)
+    // Classes de estilo
     const inputClass = "w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 placeholder:text-gray-500 font-medium";
     const labelClass = "block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 ml-1";
 
