@@ -3,60 +3,58 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        first_name: ''
-    });
+    const { login } = useAuth();
+    
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
         setError('');
 
-        // Validação Simples
-        if (formData.password !== formData.confirmPassword) {
-            setError("As passwords não coincidem.");
+        if (password !== confirmPassword) {
+            setError('As passwords não coincidem');
+            setLoading(false);
             return;
         }
 
-        setLoading(true);
-
         try {
-            const res = await fetch('http://127.0.0.1:8000/users/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                    // Enviamos o perfil opcional logo no registo
-                    profile: {
-                        first_name: formData.first_name,
-                        preferred_currency: "EUR"
-                    }
-                }),
+            // 1. Criar Utilizador
+            await api.post('/users/', {
+                email,
+                password,
+                role: 'basic'
             });
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.detail || 'Erro ao criar conta');
-            }
+            // 2. Login Automático (Pedir Token)
+            const formData = new FormData();
+            formData.append('username', email);
+            formData.append('password', password);
 
-            // Sucesso!
-            alert("Conta criada com sucesso! 🚀\nFaça login para continuar.");
-            router.push('/login');
+            // Nota: Para o token, usamos axios mas precisamos de override ao Content-Type
+            const tokenRes = await api.post('/token', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            // 3. Entrar
+            login(tokenRes.data.access_token);
 
         } catch (err: any) {
-            setError(err.message);
+            console.error(err);
+            if (err.response?.status === 400) {
+                setError('Este email já está registado.');
+            } else {
+                setError('Erro ao criar conta. Tente novamente.');
+            }
         } finally {
             setLoading(false);
         }
@@ -68,9 +66,8 @@ export default function RegisterPage() {
     return (
         <main className="min-h-screen bg-gray-50/50 flex items-center justify-center p-6">
             <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-8 md:p-10">
-
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta ✨</h1>
+                <div className="text-center mb-10">
+                    <h1 className="text-4xl font-bold text-blue-600 mb-2">Criar Conta 🚀</h1>
                     <p className="text-gray-500 font-medium">Junte-se ao MoneyMap</p>
                 </div>
 
@@ -82,38 +79,28 @@ export default function RegisterPage() {
                     )}
 
                     <div>
-                        <label className={labelClass}>Nome</label>
-                        <input required name="first_name" type="text" placeholder="Como te chamas?" className={inputClass} onChange={handleChange} />
-                    </div>
-
-                    <div>
                         <label className={labelClass}>Email</label>
-                        <input required name="email" type="email" placeholder="seu@email.com" className={inputClass} onChange={handleChange} />
+                        <input required type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
                     </div>
 
                     <div>
                         <label className={labelClass}>Password</label>
-                        <input required name="password" type="password" placeholder="••••••" className={inputClass} onChange={handleChange} />
+                        <input required type="password" placeholder="••••••" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} />
                     </div>
 
                     <div>
                         <label className={labelClass}>Confirmar Password</label>
-                        <input required name="confirmPassword" type="password" placeholder="••••••" className={inputClass} onChange={handleChange} />
+                        <input required type="password" placeholder="••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputClass} />
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 mt-4 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}
-                    >
-                        {loading ? 'A criar...' : 'Registar 🚀'}
+                    <button type="submit" disabled={loading} className={`w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all mt-4 ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                        {loading ? 'A criar conta...' : 'Registar ✨'}
                     </button>
                 </form>
 
                 <div className="mt-8 text-center text-sm text-gray-400">
                     Já tem conta? <Link href="/login" className="text-blue-600 font-bold hover:underline">Entrar</Link>
                 </div>
-
             </div>
         </main>
     );

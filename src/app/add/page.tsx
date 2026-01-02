@@ -2,113 +2,194 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/services/api';
 
-interface Account { id: number; name: string; }
-interface Type { id: number; name: string; is_investment: boolean; }
-interface Asset { id: number; symbol: string; name: string; }
-interface SubCategory { id: number; name: string; }
-interface Category { id: number; name: string; sub_categories: SubCategory[]; }
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface Account {
+    id: number;
+    name: string;
+}
 
 export default function AddTransactionPage() {
     const router = useRouter();
+    
+    // Estados para os Dropdowns
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    
+    // Estados do Formulário
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [typeId, setTypeId] = useState('1'); // 1=Despesa, 2=Receita (Default: Despesa)
+    const [categoryId, setCategoryId] = useState('');
+    const [accountId, setAccountId] = useState('');
+    
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [data, setData] = useState<{ accounts: Account[], types: Type[], categories: Category[], assets: Asset[] }>({
-        accounts: [], types: [], categories: [], assets: []
-    });
-
-    const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
-        description: '', amount: '', account_id: '', transaction_type_id: '',
-        category_id: '', sub_category_id: '', asset_id: '', quantity: '', price_per_unit: ''
-    });
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) { router.push('/login'); return; }
-        const headers = { 'Authorization': `Bearer ${token}` };
+        const fetchData = async () => {
+            try {
+                // Carregar Contas e Categorias em paralelo
+                const [accRes, catRes] = await Promise.all([
+                    api.get('/accounts/'),
+                    api.get('/categories/')
+                ]);
 
-        Promise.all([
-            fetch('http://127.0.0.1:8000/accounts', { headers }),
-            fetch('http://127.0.0.1:8000/lookups/transaction-types'),
-            fetch('http://127.0.0.1:8000/categories', { headers }),
-            fetch('http://127.0.0.1:8000/assets/')
-        ]).then(async ([acc, typ, cat, ass]) => {
-            if (acc.status === 401) throw new Error("Unauthorized");
-            setData({
-                accounts: await acc.json(),
-                types: await typ.json(),
-                categories: await cat.json(),
-                assets: await ass.json()
-            });
-            setLoading(false);
-        }).catch(() => router.push('/login'));
-    }, [router]);
+                setAccounts(accRes.data);
+                setCategories(catRes.data);
+                
+                // Selecionar a primeira conta por defeito se existir
+                if (accRes.data.length > 0) setAccountId(accRes.data[0].id.toString());
+                // Selecionar a primeira categoria se existir
+                if (catRes.data.length > 0) setCategoryId(catRes.data[0].id.toString());
+
+            } catch (err) {
+                console.error("Erro ao carregar dados:", err);
+                setError('Não foi possível carregar as contas ou categorias.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSubmitting(true);
-        const token = localStorage.getItem('token');
+        setLoading(true);
+        setError('');
 
-        const selectedType = data.types.find(t => t.id === Number(formData.transaction_type_id));
-        const isInvestment = selectedType?.is_investment;
+        try {
+            await api.post('/transactions/', {
+                description,
+                amount: parseFloat(amount),
+                date,
+                transaction_type_id: parseInt(typeId),
+                account_id: parseInt(accountId),
+                category_id: parseInt(categoryId),
+                // sub_category_id: null // Pode ser adicionado futuramente
+            });
 
-        const payload: any = {
-            date: formData.date, description: formData.description, amount: Number(formData.amount),
-            account_id: Number(formData.account_id), transaction_type_id: Number(formData.transaction_type_id),
-        };
-
-        if (isInvestment) {
-            payload.asset_id = Number(formData.asset_id);
-            payload.quantity = Number(formData.quantity);
-            payload.price_per_unit = formData.price_per_unit ? Number(formData.price_per_unit) : (Number(formData.amount) / Number(formData.quantity));
-        } else {
-            payload.sub_category_id = Number(formData.sub_category_id);
+            // Sucesso! Voltar ao Dashboard
+            router.push('/');
+        } catch (err: any) {
+            console.error(err);
+            setError('Erro ao criar transação. Verifique os dados.');
+            setLoading(false);
         }
-
-        await fetch('http://127.0.0.1:8000/transactions/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(payload),
-        });
-        router.push('/transactions');
-        router.refresh();
     };
 
-    const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const inputClass = "w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium text-gray-700";
+    const labelClass = "block text-xs font-bold text-gray-500 uppercase mb-2 ml-1";
 
-    if (loading) return <div className="flex h-screen items-center justify-center">A carregar...</div>;
-
-    const isInv = data.types.find(t => t.id === Number(formData.transaction_type_id))?.is_investment;
-    const cats = data.categories.find(c => c.id === Number(formData.category_id))?.sub_categories || [];
-    const inputClass = "w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium";
+    if (loading && accounts.length === 0) return <div className="p-10 text-center text-gray-500">A carregar dados... ⏳</div>;
 
     return (
-        <main className="min-h-screen bg-gray-50/50 p-6 flex justify-center pt-12">
-            <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl p-8">
-                <h1 className="text-3xl font-bold mb-8 text-gray-900">Nova Transação 💸</h1>
+        <main className="min-h-screen bg-gray-50/50 p-6 flex items-center justify-center">
+            <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-gray-100 p-8 md:p-10">
+                
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800">Nova Transação</h1>
+                    <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 font-bold text-sm">Cancel</button>
+                </div>
+
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl font-bold text-sm text-center">{error}</div>}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <input required name="description" placeholder="Descrição" className={`md:col-span-2 ${inputClass}`} onChange={handleChange} />
-                        <input required name="amount" type="number" step="0.01" placeholder="Valor (€)" className={inputClass} onChange={handleChange} />
-                        <input required name="date" type="date" value={formData.date} className={inputClass} onChange={handleChange} />
-                        <select required name="account_id" className={inputClass} onChange={handleChange}><option value="">Conta...</option>{data.accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
-                        <select required name="transaction_type_id" className={inputClass} onChange={handleChange}><option value="">Tipo...</option>{data.types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
+                    
+                    {/* Linha 1: Tipo e Valor */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>Tipo</label>
+                            <select 
+                                value={typeId} 
+                                onChange={e => setTypeId(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="1">📉 Despesa</option>
+                                <option value="2">📈 Receita</option>
+                                <option value="3">🏦 Investimento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className={labelClass}>Valor (€)</label>
+                            <input 
+                                required
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                className={inputClass}
+                            />
+                        </div>
                     </div>
 
-                    {isInv ? (
-                        <div className="p-6 bg-blue-50 rounded-2xl grid md:grid-cols-2 gap-6">
-                            <select required name="asset_id" className={`md:col-span-2 ${inputClass}`} onChange={handleChange}><option value="">Ativo...</option>{data.assets.map(a => <option key={a.id} value={a.id}>{a.symbol} - {a.name}</option>)}</select>
-                            <input required name="quantity" type="number" placeholder="Quantidade" className={inputClass} onChange={handleChange} />
-                            <input name="price_per_unit" type="number" placeholder="Preço/Unidade (Opcional)" className={inputClass} onChange={handleChange} />
+                    {/* Descrição */}
+                    <div>
+                        <label className={labelClass}>Descrição</label>
+                        <input 
+                            required
+                            type="text" 
+                            placeholder="Ex: Supermercado, Salário..." 
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+
+                    {/* Linha 2: Categoria e Conta */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>Categoria</label>
+                            <select 
+                                value={categoryId}
+                                onChange={e => setCategoryId(e.target.value)}
+                                className={inputClass}
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
                         </div>
-                    ) : (
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <select required={!isInv} name="category_id" className={inputClass} onChange={handleChange}><option value="">Categoria...</option>{data.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-                            <select required={!isInv} name="sub_category_id" className={inputClass} disabled={!formData.category_id} onChange={handleChange}><option value="">Sub-Categoria...</option>{cats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                        <div>
+                            <label className={labelClass}>Conta</label>
+                            <select 
+                                value={accountId}
+                                onChange={e => setAccountId(e.target.value)}
+                                className={inputClass}
+                            >
+                                {accounts.map(acc => (
+                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                ))}
+                            </select>
                         </div>
-                    )}
-                    <button type="submit" disabled={submitting} className="w-full py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black">{submitting ? 'A guardar...' : 'Guardar'}</button>
+                    </div>
+
+                    {/* Data */}
+                    <div>
+                        <label className={labelClass}>Data</label>
+                        <input 
+                            type="date" 
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className={`w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all mt-4 ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                        {loading ? 'A guardar...' : 'Guardar Transação ✅'}
+                    </button>
                 </form>
             </div>
         </main>

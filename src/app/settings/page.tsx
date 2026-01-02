@@ -1,287 +1,173 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-
-// --- INTERFACES ---
-interface UserProfile {
-    first_name: string;
-    last_name: string;
-    preferred_currency: string;
-}
-
-interface SubCategory {
-    id: number;
-    name: string;
-}
+import { useState, useEffect } from 'react';
+import api from '@/services/api';
 
 interface Category {
     id: number;
     name: string;
-    sub_categories: SubCategory[];
 }
 
 export default function SettingsPage() {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'profile' | 'categories'>('profile');
-    const [loading, setLoading] = useState(true);
-
-    // --- ESTADOS DE DADOS ---
-    const [profile, setProfile] = useState<UserProfile>({ first_name: '', last_name: '', preferred_currency: 'EUR' });
+    // Estados Perfil
+    const [firstName, setFirstName] = useState('');
+    const [currency, setCurrency] = useState('EUR');
+    
+    // Estados Categorias
     const [categories, setCategories] = useState<Category[]>([]);
+    const [newCategory, setNewCategory] = useState('');
+    
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState('');
 
-    // Estados para Criar Nova Categoria
-    const [newSubName, setNewSubName] = useState('');
-    const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
-
-    // --- 1. CARREGAR DADOS INICIAIS ---
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) { router.push('/login'); return; }
+        loadData();
+    }, []);
 
-        const headers = { 'Authorization': `Bearer ${token}` };
+    const loadData = async () => {
+        try {
+            const [userRes, catRes] = await Promise.all([
+                api.get('/users/me'),
+                api.get('/categories/')
+            ]);
+            
+            if (userRes.data.profile) {
+                setFirstName(userRes.data.profile.first_name);
+                setCurrency(userRes.data.profile.preferred_currency);
+            }
+            setCategories(catRes.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
-        Promise.all([
-            fetch('http://127.0.0.1:8000/users/me', { headers }), // Busca dados do user + perfil
-            fetch('http://127.0.0.1:8000/categories', { headers }) // Busca categorias
-        ])
-            .then(async ([userRes, catRes]) => {
-                if (userRes.ok) {
-                    const userData = await userRes.json();
-                    // Se o utilizador já tiver perfil, preenchemos o formulário
-                    if (userData.profile) {
-                        setProfile({
-                            first_name: userData.profile.first_name || '',
-                            last_name: userData.profile.last_name || '',
-                            preferred_currency: userData.profile.preferred_currency || 'EUR'
-                        });
-                    }
-                }
-
-                if (catRes.ok) {
-                    setCategories(await catRes.json());
-                }
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, [router]);
-
-    // --- 2. GUARDAR PERFIL ---
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
-
+        setLoading(true);
         try {
-            const res = await fetch('http://127.0.0.1:8000/users/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(profile)
+            await api.put('/users/me', {
+                first_name: firstName,
+                preferred_currency: currency
             });
-
-            if (res.ok) {
-                alert("Perfil atualizado! (Pode precisar de fazer refresh para atualizar a Navbar)");
-                window.location.reload(); // Força refresh para atualizar o nome na Navbar
-            } else {
-                alert("Erro ao guardar perfil.");
-            }
-        } catch (error) {
-            alert("Erro de conexão.");
+            setMsg('Perfil atualizado! ✅');
+            setTimeout(() => setMsg(''), 3000);
+        } catch (err) {
+            setMsg('Erro ao guardar perfil. ❌');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // --- 3. ADICIONAR SUBCATEGORIA ---
-    const handleAddSubCategory = async (e: React.FormEvent) => {
+    const handleAddCategory = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedCatId || !newSubName) return;
-
-        const token = localStorage.getItem('token');
+        if (!newCategory.trim()) return;
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/subcategories', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ name: newSubName, category_id: selectedCatId })
-            });
-
-            if (res.ok) {
-                const newSub = await res.json();
-
-                // Atualizar a lista localmente para aparecer de imediato
-                setCategories(prev => prev.map(cat => {
-                    if (cat.id === selectedCatId) {
-                        return { ...cat, sub_categories: [...cat.sub_categories, newSub] };
-                    }
-                    return cat;
-                }));
-
-                setNewSubName(''); // Limpar input
-            } else {
-                alert("Erro ao criar categoria.");
-            }
-        } catch (error) {
-            alert("Erro de conexão.");
+            const res = await api.post('/categories/', { name: newCategory });
+            setCategories([...categories, res.data]); // Adiciona à lista local
+            setNewCategory('');
+        } catch (err) {
+            alert('Erro ao criar categoria');
         }
     };
 
-    // --- 4. APAGAR SUBCATEGORIA ---
-    const handleDeleteSub = async (id: number, catId: number) => {
-        if (!confirm("Tem a certeza? Se tiver transações nesta categoria, não será possível apagar.")) return;
-
-        const token = localStorage.getItem('token');
-
-        const res = await fetch(`http://127.0.0.1:8000/subcategories/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (res.ok) {
-            // Remover da lista localmente
-            setCategories(prev => prev.map(cat => {
-                if (cat.id === catId) {
-                    return { ...cat, sub_categories: cat.sub_categories.filter(s => s.id !== id) };
-                }
-                return cat;
-            }));
-        } else {
-            const err = await res.json();
-            alert(err.detail || "Não foi possível apagar.");
+    const handleDeleteCategory = async (id: number) => {
+        if (!confirm('Tem a certeza? Isto pode afetar transações antigas.')) return;
+        try {
+            await api.delete(`/categories/${id}`);
+            setCategories(categories.filter(c => c.id !== id));
+        } catch (err) {
+            alert('Não foi possível apagar (pode ter transações associadas).');
         }
     };
 
-    // Estilos comuns
-    const inputClass = "w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all";
-    const btnClass = "px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-shadow shadow-sm";
-
-    if (loading) return <div className="p-10 text-center text-gray-500">A carregar definições...</div>;
+    const inputClass = "w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium";
+    const labelClass = "block text-xs font-bold text-gray-500 uppercase mb-2";
 
     return (
-        <main className="min-h-screen bg-gray-50 p-6 md:p-10 font-sans text-gray-800">
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Definições ⚙️</h1>
+        <main className="max-w-4xl mx-auto p-6 grid md:grid-cols-2 gap-8">
+            
+            {/* COLUNA ESQUERDA: PERFIL */}
+            <div>
+                <h1 className="text-3xl font-bold text-gray-800 mb-8">Definições ⚙️</h1>
+                
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8">
+                    <h2 className="text-xl font-bold text-blue-600 mb-6">Perfil</h2>
+                    <form onSubmit={handleSaveProfile} className="space-y-6">
+                        <div>
+                            <label className={labelClass}>Nome</label>
+                            <input 
+                                value={firstName} 
+                                onChange={e => setFirstName(e.target.value)}
+                                className={inputClass} 
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className={labelClass}>Moeda</label>
+                            <select 
+                                value={currency} 
+                                onChange={e => setCurrency(e.target.value)}
+                                className={inputClass}
+                            >
+                                <option value="EUR">Euro (€)</option>
+                                <option value="USD">Dólar ($)</option>
+                            </select>
+                        </div>
 
-                {/* --- NAVEGAÇÃO ENTRE TABS --- */}
-                <div className="flex border-b border-gray-200 mb-8 gap-6">
-                    <button
-                        onClick={() => setActiveTab('profile')}
-                        className={`pb-3 font-semibold transition-colors border-b-2 ${activeTab === 'profile' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                    >
-                        Perfil Pessoal
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('categories')}
-                        className={`pb-3 font-semibold transition-colors border-b-2 ${activeTab === 'categories' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                    >
-                        Gerir Categorias
-                    </button>
+                        {msg && <p className="text-center font-bold text-green-600 animate-pulse">{msg}</p>}
+
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                        >
+                            {loading ? 'A guardar...' : 'Guardar Alterações'}
+                        </button>
+                    </form>
                 </div>
-
-                {/* --- TAB: PERFIL --- */}
-                {activeTab === 'profile' && (
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 animate-in fade-in duration-300">
-                        <h2 className="text-xl font-bold mb-6 text-gray-800">Editar Dados</h2>
-                        <form onSubmit={handleSaveProfile} className="space-y-6 max-w-lg">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-500 mb-1">Nome Próprio</label>
-                                    <input required type="text" value={profile.first_name} onChange={e => setProfile({ ...profile, first_name: e.target.value })} className={inputClass} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-500 mb-1">Apelido</label>
-                                    <input type="text" value={profile.last_name} onChange={e => setProfile({ ...profile, last_name: e.target.value })} className={inputClass} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-gray-500 mb-1">Moeda Preferida</label>
-                                <select value={profile.preferred_currency} onChange={e => setProfile({ ...profile, preferred_currency: e.target.value })} className={inputClass}>
-                                    <option value="EUR">Euro (€)</option>
-                                    <option value="USD">Dólar ($)</option>
-                                    <option value="GBP">Libra (£)</option>
-                                </select>
-                            </div>
-
-                            <button type="submit" className={btnClass}>Guardar Alterações</button>
-                        </form>
-                    </div>
-                )}
-
-                {/* --- TAB: CATEGORIAS --- */}
-                {activeTab === 'categories' && (
-                    <div className="space-y-8 animate-in fade-in duration-300">
-
-                        {/* Formulário de Adição */}
-                        <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                            <h2 className="text-lg font-bold text-blue-900 mb-4">Adicionar Nova Categoria</h2>
-                            <form onSubmit={handleAddSubCategory} className="flex flex-col md:flex-row gap-4 items-end">
-                                <div className="flex-1 w-full">
-                                    <label className="block text-xs font-bold text-blue-400 uppercase mb-1">Grupo Principal</label>
-                                    <select
-                                        value={selectedCatId || ''}
-                                        onChange={e => setSelectedCatId(Number(e.target.value))}
-                                        className={inputClass}
-                                        required
-                                    >
-                                        <option value="">Selecione um grupo...</option>
-                                        {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex-1 w-full">
-                                    <label className="block text-xs font-bold text-blue-400 uppercase mb-1">Nome da Subcategoria</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: Internet, Ginásio..."
-                                        value={newSubName}
-                                        onChange={e => setNewSubName(e.target.value)}
-                                        className={inputClass}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className={`${btnClass} w-full md:w-auto`}>Adicionar +</button>
-                            </form>
-                        </div>
-
-                        {/* Lista de Categorias */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {categories.map(cat => (
-                                <div key={cat.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                                    <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 font-bold text-gray-700">
-                                        {cat.name}
-                                    </div>
-                                    <div className="p-5 flex-1">
-                                        {cat.sub_categories.length === 0 ? (
-                                            <p className="text-gray-400 text-sm italic">Sem subcategorias definidas.</p>
-                                        ) : (
-                                            <div className="flex flex-wrap gap-2">
-                                                {cat.sub_categories.map(sub => (
-                                                    <div key={sub.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 text-sm border border-gray-200 group hover:border-red-200 hover:bg-red-50 transition-colors">
-                                                        {sub.name}
-                                                        <button
-                                                            onClick={() => handleDeleteSub(sub.id, cat.id)}
-                                                            className="text-gray-300 hover:text-red-500 font-bold px-1 transition-colors"
-                                                            title="Apagar"
-                                                        >
-                                                            ×
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {/* COLUNA DIREITA: CATEGORIAS */}
+            <div className="md:mt-20"> {/* Margem para alinhar visualmente com o título */}
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+                    <h2 className="text-xl font-bold text-blue-600 mb-6">Gestão de Categorias</h2>
+                    
+                    {/* Formulário Adicionar */}
+                    <form onSubmit={handleAddCategory} className="flex gap-2 mb-6">
+                        <input 
+                            placeholder="Nova Categoria..."
+                            value={newCategory}
+                            onChange={e => setNewCategory(e.target.value)}
+                            className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button 
+                            type="submit"
+                            className="px-6 py-3 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-900"
+                        >
+                            +
+                        </button>
+                    </form>
+
+                    {/* Lista */}
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                        {categories.map(cat => (
+                            <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                <span className="font-bold text-gray-700">{cat.name}</span>
+                                <button 
+                                    onClick={() => handleDeleteCategory(cat.id)}
+                                    className="text-gray-400 hover:text-red-500 p-2"
+                                    title="Apagar"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        ))}
+                        {categories.length === 0 && <p className="text-gray-400 text-center text-sm">Sem categorias.</p>}
+                    </div>
+                </div>
+            </div>
+
         </main>
     );
 }
