@@ -2,8 +2,8 @@
 
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import api from '@/services/api'; // <--- A peça chave
 
-// Interfaces de Dados
 export interface User {
     id: number;
     email: string;
@@ -32,21 +32,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    // Função central para buscar dados do utilizador
-    const fetchUser = async (token: string) => {
+    const fetchUser = async () => {
         try {
-            const res = await fetch('http://127.0.0.1:8000/users/me', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (res.ok) {
-                const userData = await res.json();
-                setUser(userData);
-            } else {
-                logout(); // Token inválido -> Logout
-            }
+            // Usa api.get em vez de fetch. O token vai automático.
+            const res = await api.get('/users/me');
+            setUser(res.data);
         } catch (error) {
             console.error("Erro auth:", error);
+            // Se der erro de auth, o próprio api.ts já trata do redirect,
+            // mas podemos forçar limpeza aqui por segurança
+            localStorage.removeItem('token');
+            setUser(null);
         } finally {
             setLoading(false);
         }
@@ -55,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            fetchUser(token);
+            fetchUser();
         } else {
             setLoading(false);
         }
@@ -63,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = (token: string) => {
         localStorage.setItem('token', token);
-        fetchUser(token).then(() => router.push('/')); // Vai para o Dashboard
+        // Esperamos que o user carregue antes de navegar
+        fetchUser().then(() => router.push('/')); 
     };
 
     const logout = () => {
@@ -73,8 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const refreshUser = async () => {
-        const token = localStorage.getItem('token');
-        if (token) await fetchUser(token);
+        await fetchUser();
     };
 
     return (
