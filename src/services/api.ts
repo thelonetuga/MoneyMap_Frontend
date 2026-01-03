@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint } from '../types/api';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams } from '../types/api';
 
 // Ajusta a URL se o teu backend estiver noutro sítio
 export const API_URL = 'http://127.0.0.1:8000';
@@ -45,9 +45,10 @@ export const getPortfolio = async (): Promise<PortfolioResponse> => {
   return response.data as PortfolioResponse;
 };
 
-export const updateAssetPrices = async (): Promise<{ updated_count: number }> => {
-  const response = await api.post('/portfolio/update-prices');
-  return response.data as { updated_count: number };
+// REMOVIDO: updateAssetPrices (Automático)
+// NOVO: Atualização Manual
+export const updateManualPrice = async (symbol: string, price: number): Promise<void> => {
+  await api.post('/portfolio/price', { symbol, price });
 };
 
 export const getHistory = async (range: string = '30d'): Promise<HistoryPoint[]> => {
@@ -64,11 +65,23 @@ export const getSpending = async (range: string = '30d'): Promise<SpendingItem[]
   return response.data as SpendingItem[];
 };
 
-export const getEvolution = async (period: string = 'year'): Promise<EvolutionPoint[]> => {
+export const getEvolution = async (period: string = 'year', time_range: string = 'all'): Promise<EvolutionPoint[]> => {
   const response = await api.get('/analytics/evolution', {
-    params: { period }
+    params: { period, time_range }
   });
   return response.data as EvolutionPoint[];
+};
+
+// --- SERVIÇOS DE TRANSAÇÕES ---
+
+export const getTransactions = async (params?: TransactionQueryParams): Promise<PaginatedResponse<TransactionResponse>> => {
+  const response = await api.get('/transactions', { params });
+  return response.data as PaginatedResponse<TransactionResponse>;
+};
+
+// --- SERVIÇOS DE CONTAS ---
+export const deleteAccount = async (id: number): Promise<void> => {
+  await api.delete(`/accounts/${id}`);
 };
 
 export default api;

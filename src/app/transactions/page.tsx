@@ -1,150 +1,156 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import api from "@/services/api";
-
-interface Transaction {
-  id: number;
-  description: string;
-  amount: number;
-  date: string;
-  category?: { name: string };
-  subcategory?: { name: string }; // Agora suportamos subcategorias
-  account: { name: string };
-  transaction_type: { name: string };
-}
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { getTransactions } from '../../services/api';
+import { TransactionQueryParams } from '../../types/api';
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
+  
+  // Estados de Filtro e Paginação
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<TransactionQueryParams['sort_by']>('date_desc');
+  
+  // Verificar autenticação
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    const token = localStorage.getItem('token');
+    if (!token) { router.push('/login'); }
+  }, [router]);
 
-  const loadTransactions = async () => {
-    try {
-      // Vamos buscar as últimas 100
-      const res = await api.get("/transactions/?limit=100");
-      setTransactions(res.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Query de Transações
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['transactions', page, sortBy],
+    queryFn: () => getTransactions({ page, size: 20, sort_by: sortBy }),
+    placeholderData: (previousData) => previousData, // Mantém dados antigos enquanto carrega novos (UX melhor)
+  });
 
-  const handleDelete = async (id: number) => {
-    if (
-      !confirm(
-        "Tem a certeza que quer apagar esta transação? O saldo da conta será revertido."
-      )
-    )
-      return;
-
-    try {
-      await api.delete(`/transactions/${id}`);
-      // Remover da lista visualmente
-      setTransactions(transactions.filter((t) => t.id !== id));
-    } catch (error) {
-      alert("Erro ao apagar transação.");
-    }
-  };
-
-  if (loading)
+  if (isLoading && !data) {
     return (
-      <div className="p-10 text-center text-gray-400">
-        A carregar histórico... ⏳
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-400 animate-pulse font-bold">A carregar transações... 🧾</div>
       </div>
     );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-red-500">
+        Erro ao carregar transações.
+      </div>
+    );
+  }
 
   return (
-    <main className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">
-        Histórico de Transações 📜
-      </h1>
+    <main className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">Extrato de Transações</h1>
+          
+          <div className="flex gap-2">
+            {/* Filtro de Ordenação */}
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="date_desc">Mais Recentes</option>
+              <option value="date_asc">Mais Antigas</option>
+              <option value="amount_desc">Maior Valor</option>
+              <option value="amount_asc">Menor Valor</option>
+            </select>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="p-4 font-bold text-gray-500 uppercase">Data</th>
-                <th className="p-4 font-bold text-gray-500 uppercase">
-                  Descrição
-                </th>
-                <th className="p-4 font-bold text-gray-500 uppercase">
-                  Categoria
-                </th>
-                <th className="p-4 font-bold text-gray-500 uppercase">Conta</th>
-                <th className="p-4 font-bold text-gray-500 uppercase text-right">
-                  Valor
-                </th>
-                <th className="p-4 font-bold text-gray-500 uppercase text-center">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {transactions.map((t) => {
-                const isExpense =
-                  ["Despesa", "Expense", "Saída"].some((k) =>
-                    t.transaction_type.name.includes(k)
-                  ) || t.amount < 0;
-                return (
-                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4 text-gray-500 whitespace-nowrap">
-                      {new Date(t.date).toLocaleDateString("pt-PT")}
+            <button 
+              onClick={() => router.push('/add')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors"
+            >
+              + Nova
+            </button>
+          </div>
+        </div>
+
+        {/* TABELA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3">Data</th>
+                  <th className="px-6 py-3">Descrição</th>
+                  <th className="px-6 py-3">Categoria</th>
+                  <th className="px-6 py-3">Conta</th>
+                  <th className="px-6 py-3 text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.items.map((tx) => (
+                  <tr key={tx.id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-mono text-gray-600">
+                      {tx.date}
                     </td>
-                    <td className="p-4 font-medium text-gray-800">
-                      {t.description}
-                    </td>
-                    <td className="p-4 text-gray-600">
-                      <span className="block">
-                        {t.category?.name || "Geral"}
-                      </span>
-                      {t.subcategory && (
-                        <span className="text-xs text-gray-400">
-                          {t.subcategory.name}
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {tx.description}
+                      {tx.symbol && (
+                        <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
+                          {tx.symbol}
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-gray-500">
-                      {t.account?.name || "Conta Apagada"}
+                    <td className="px-6 py-4">
+                      {tx.category?.name || tx.sub_category?.name || '-'}
                     </td>
-                    <td
-                      className={`p-4 text-right font-bold ${
-                        isExpense ? "text-red-500" : "text-green-500"
-                      }`}
-                    >
-                      {isExpense ? "" : "+"}
-                      {t.amount.toFixed(2)} €
+                    <td className="px-6 py-4">
+                      {tx.account.name}
                     </td>
-                    <td className="p-4 text-center">
-                      <button
-                        onClick={() => handleDelete(t.id)}
-                        className="text-gray-300 hover:text-red-600 transition-colors p-2"
-                        title="Apagar Transação"
-                      >
-                        🗑️
-                      </button>
+                    <td className={`px-6 py-4 text-right font-bold ${
+                      // Lógica simples: se for "Receita" ou "Venda" é verde, senão vermelho (simplificação)
+                      // O ideal seria ter um campo is_expense no tipo
+                      tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
                     </td>
                   </tr>
-                );
-              })}
-              {transactions.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-8 text-center text-gray-400 italic"
-                  >
-                    Sem transações registadas.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+                {data?.items.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic">
+                      Nenhuma transação encontrada.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* PAGINAÇÃO */}
+          <div className="flex justify-between items-center p-4 border-t border-gray-100 bg-gray-50">
+            <span className="text-sm text-gray-700">
+              Página <span className="font-semibold text-gray-900">{data?.page}</span> de <span className="font-semibold text-gray-900">{data?.pages}</span>
+            </span>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              <button 
+                onClick={() => setPage(p => (data && p < data.pages ? p + 1 : p))}
+                disabled={!data || page >= data.pages}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
+
       </div>
     </main>
   );

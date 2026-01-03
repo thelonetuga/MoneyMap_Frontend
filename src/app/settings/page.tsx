@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api from '@/services/api';
+import api, { deleteAccount } from '@/services/api';
 
 // --- INTERFACES ---
 interface SubCategory {
@@ -12,7 +12,7 @@ interface SubCategory {
 interface Category {
     id: number;
     name: string;
-    subcategories: SubCategory[]; // Nome corrigido (sem underscore)
+    subcategories: SubCategory[];
 }
 
 interface Account {
@@ -24,7 +24,7 @@ interface Account {
 
 export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'profile' | 'accounts' | 'categories'>('accounts');
+    const [activeTab, setActiveTab] = useState<'profile' | 'accounts' | 'categories' | 'import'>('accounts');
 
     // Estados
     const [firstName, setFirstName] = useState('');
@@ -39,6 +39,12 @@ export default function SettingsPage() {
     const [newCatName, setNewCatName] = useState('');
     const [newSubName, setNewSubName] = useState('');
     const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
+
+    // Import State
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importAccount, setImportAccount] = useState<string>('');
+    const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+    const [importLoading, setImportLoading] = useState(false);
 
     useEffect(() => { loadAllData(); }, []);
 
@@ -57,6 +63,7 @@ export default function SettingsPage() {
             }
             setAccounts(accRes.data);
             setCategories(catRes.data);
+            if (accRes.data.length > 0) setImportAccount(String(accRes.data[0].id));
         } catch (err) { console.error(err); } 
         finally { setLoading(false); }
     };
@@ -83,6 +90,17 @@ export default function SettingsPage() {
             setAccounts([...accounts, res.data]);
             setNewAccName(''); setNewAccBalance('');
         } catch (err) { alert('Erro ao criar conta.'); }
+    };
+
+    const handleDeleteAccount = async (id: number) => {
+        if (!confirm('Tem a certeza que deseja apagar esta conta? Todas as transações associadas serão perdidas.')) return;
+        try {
+            await deleteAccount(id);
+            setAccounts(accounts.filter(acc => acc.id !== id));
+        } catch (err) { 
+            console.error(err);
+            alert('Erro ao apagar conta. Verifique se existem dependências.'); 
+        }
     };
 
     const handleCreateCategory = async (e: React.FormEvent) => {
@@ -130,8 +148,32 @@ export default function SettingsPage() {
         } catch (err) { alert('Erro: Verifique se a categoria tem transações.'); }
     };
 
+    const handleImportUpload = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importFile || !importAccount) return;
+
+        setImportLoading(true);
+        setImportStatus(null);
+
+        const formData = new FormData();
+        formData.append('file', importFile);
+        
+        try {
+            const res = await api.post(`/imports/upload?account_id=${importAccount}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setImportStatus({ type: 'success', msg: `Sucesso! ${res.data.added} transações importadas.` });
+            setImportFile(null); 
+        } catch (err: any) {
+            console.error(err);
+            setImportStatus({ type: 'error', msg: err.response?.data?.detail || 'Erro ao importar ficheiro.' });
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
     // --- UI ---
-    const tabClass = (tab: string) => `px-6 py-3 rounded-xl font-bold transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-50'}`;
+    const tabClass = (tab: string) => `px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-50'}`;
     const inputClass = "w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium";
 
     if (loading) return <div className="p-10 text-center text-gray-400">A carregar... ⚙️</div>;
@@ -142,6 +184,7 @@ export default function SettingsPage() {
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                 <button onClick={() => setActiveTab('accounts')} className={tabClass('accounts')}>🏦 Contas</button>
                 <button onClick={() => setActiveTab('categories')} className={tabClass('categories')}>🏷️ Categorias</button>
+                <button onClick={() => setActiveTab('import')} className={tabClass('import')}>📂 Importar</button>
                 <button onClick={() => setActiveTab('profile')} className={tabClass('profile')}>👤 Perfil</button>
             </div>
 
@@ -150,11 +193,21 @@ export default function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                         {accounts.map(acc => (
-                            <div key={acc.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                            <div key={acc.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center group">
                                 <div><p className="font-bold text-gray-800">{acc.name}</p><p className="text-sm text-gray-500">{acc.account_type?.name}</p></div>
-                                <p className={`font-bold ${acc.current_balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{acc.current_balance.toFixed(2)} €</p>
+                                <div className="flex items-center gap-4">
+                                    <p className={`font-bold ${acc.current_balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{acc.current_balance.toFixed(2)} €</p>
+                                    <button 
+                                        onClick={() => handleDeleteAccount(acc.id)}
+                                        className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50"
+                                        title="Apagar Conta"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                         ))}
+                        {accounts.length === 0 && <p className="text-gray-400 italic text-center">Sem contas criadas.</p>}
                     </div>
                     <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 h-fit">
                         <h2 className="text-xl font-bold text-blue-600 mb-6">+ Nova Conta</h2>
@@ -207,6 +260,59 @@ export default function SettingsPage() {
                             <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl">+</button>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {/* TAB IMPORTAR (NOVO) */}
+            {activeTab === 'import' && (
+                <div className="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <h2 className="text-xl font-bold text-gray-700 mb-2">Importar Extrato 📂</h2>
+                    <p className="text-gray-500 mb-6 text-sm">Carregue ficheiros .CSV ou .XLSX do seu banco.</p>
+
+                    <form onSubmit={handleImportUpload} className="space-y-6">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Para a Conta</label>
+                            <select 
+                                value={importAccount}
+                                onChange={(e) => setImportAccount(e.target.value)}
+                                className={inputClass}
+                            >
+                                {accounts.map(acc => (
+                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                ))}
+                            </select>
+                            {accounts.length === 0 && <p className="text-red-500 text-xs mt-1">Crie uma conta primeiro!</p>}
+                        </div>
+
+                        <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                            <input 
+                                type="file" 
+                                accept=".csv, .xlsx" 
+                                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            <div className="space-y-2">
+                                <span className="text-4xl">📄</span>
+                                <p className="font-medium text-gray-600">
+                                    {importFile ? importFile.name : "Arraste ou clique para selecionar"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {importStatus && (
+                            <div className={`p-4 rounded-xl text-sm font-bold text-center ${importStatus.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                {importStatus.msg}
+                            </div>
+                        )}
+
+                        <button 
+                            type="submit" 
+                            disabled={!importFile || importLoading || !importAccount}
+                            className={`w-full py-4 rounded-2xl text-white font-bold transition-all ${!importFile || importLoading ? 'bg-gray-300' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}
+                        >
+                            {importLoading ? 'A processar...' : 'Importar Agora'}
+                        </button>
+                    </form>
                 </div>
             )}
 

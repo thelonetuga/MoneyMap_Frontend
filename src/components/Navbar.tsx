@@ -20,6 +20,23 @@ export default function Navbar() {
 
   if (["/login", "/register"].includes(pathname)) return null;
 
+  // Função auxiliar para formatar a role
+  const getRoleLabel = (role?: string) => {
+    switch(role) {
+      case 'admin': return 'Admin';
+      case 'premium': return 'Premium';
+      default: return 'Básico';
+    }
+  };
+
+  const getRoleColor = (role?: string) => {
+    switch(role) {
+      case 'admin': return 'text-purple-600';
+      case 'premium': return 'text-amber-600';
+      default: return 'text-gray-400';
+    }
+  };
+
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4">
@@ -38,7 +55,7 @@ export default function Navbar() {
               Dashboard
             </Link>
             <Link href="/transactions" className={linkStyle("/transactions")}>
-              Histórico
+              Transações
             </Link>
             <Link href="/settings" className={linkStyle("/settings")}>
               Definições ⚙️
@@ -54,28 +71,20 @@ export default function Navbar() {
                 Admin 🛡️
               </Link>
             )}
-
-            {/* LINK PREMIUM: SÓ APARECE SE TIVERES O ROLE CERTO */}
-            {(user?.role === "premium" || user?.role === "admin") && (
-              <Link
-                href="/imports"
-                className="text-amber-600 font-bold px-4 py-2 text-sm"
-              >
-                Importar ⭐
-              </Link>
-            )}
           </div>
 
           <div className="flex items-center gap-4">
+            {/* BOTÃO NOVA TRANSAÇÃO (Escondido em Mobile porque existe na BottomNav) */}
             <Link
               href="/add"
-              className={`hidden sm:block px-4 py-2 rounded-lg text-sm font-bold text-white transition-transform active:scale-95 shadow-sm ${
+              className={`hidden md:flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-bold text-white transition-transform active:scale-95 shadow-sm ${
                 pathname === "/add"
                   ? "bg-blue-800"
                   : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              + Nova Transação
+              <span>+</span>
+              <span className="hidden sm:inline">Nova</span>
             </Link>
 
             <div className="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
@@ -96,12 +105,12 @@ export default function Navbar() {
                 )}
               </div>
 
-              <div className="text-right hidden sm:block">
-                <p className="text-xs text-gray-400 font-medium uppercase">
-                  {user?.role === "premium" ? "Premium 🌟" : "Básico"}
+              <div className="text-right hidden sm:flex flex-col items-end justify-center">
+                <p className="text-sm font-bold text-gray-800 leading-tight">
+                  {loading ? "..." : user?.profile?.first_name || user?.email?.split('@')[0]}
                 </p>
-                <p className="text-sm font-bold text-gray-700 leading-none">
-                  {loading ? "..." : user?.profile?.first_name || user?.email}
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${getRoleColor(user?.role as string)}`}>
+                  {getRoleLabel(user?.role as string)}
                 </p>
               </div>
 

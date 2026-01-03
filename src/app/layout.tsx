@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
+import BottomNav from "../components/BottomNav"; // IMPORTADO
 import { AuthProvider } from "../context/AuthContext";
 import ReactQueryProvider from "../lib/react-query";
 
@@ -23,7 +24,10 @@ export default function RootLayout({
         <ReactQueryProvider>
           <AuthProvider>
               <Navbar />
-              {children}
+              <div className="pb-20 md:pb-0"> {/* Padding para não esconder conteúdo atrás da BottomNav */}
+                {children}
+              </div>
+              <BottomNav />
           </AuthProvider>
         </ReactQueryProvider>
       </body>

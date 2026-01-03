@@ -206,3 +206,20 @@ export interface EvolutionPoint {
   income: number;       // Total ganho nesse período
   savings_rate: number; // % de poupança (0 a 100)
 }
+
+// --- 9. PAGINAÇÃO ---
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface TransactionQueryParams {
+  page?: number;
+  size?: number;
+  category_id?: number;
+  sort_by?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+}

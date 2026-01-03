@@ -1,13 +1,13 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query'; // IMPORTADO useQueryClient
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   AreaChart, Area, XAxis, YAxis, CartesianGrid
 } from 'recharts';
-import { getPortfolio, getHistory, getSpending, updateAssetPrices } from '../services/api'; // IMPORTADO updateAssetPrices
+import { getPortfolio, getHistory, getSpending, updateManualPrice } from '../services/api'; // IMPORTADO updateManualPrice
 import EvolutionChart from '../components/EvolutionChart';
 import { PortfolioPosition } from '../types/api';
 
@@ -17,9 +17,13 @@ const COLORS_SPEND = ['#FF8042', '#FFBB28', '#FF6B6B', '#D94848', '#993333'];
 
 export default function Home() {
   const router = useRouter();
-  const queryClient = useQueryClient(); // Hook do React Query
+  const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('30d');
-  const [updatingPrices, setUpdatingPrices] = useState(false); // Estado para o botão de refresh
+  
+  // Estado para edição manual de preços
+  const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
 
   // Verificar autenticação (simples)
   useEffect(() => {
@@ -44,20 +48,29 @@ export default function Home() {
     queryFn: () => getSpending(timeRange),
   });
 
-  // --- FUNÇÃO PARA ATUALIZAR PREÇOS ---
-  const handleUpdatePrices = async () => {
-    setUpdatingPrices(true);
+  // --- FUNÇÃO PARA SALVAR PREÇO MANUAL ---
+  const handleSavePrice = async (symbol: string) => {
+    if (!editPrice || isNaN(Number(editPrice))) return;
+    
+    setSavingPrice(true);
     try {
-      await updateAssetPrices();
-      // Após sucesso, invalida a cache para recarregar os dados novos
+      await updateManualPrice(symbol, Number(editPrice));
+      // Invalida cache para recarregar
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       await queryClient.invalidateQueries({ queryKey: ['evolution'] });
+      setEditingSymbol(null);
+      setEditPrice('');
     } catch (error) {
-      console.error("Erro ao atualizar preços:", error);
-      alert("Erro ao atualizar cotações. Tente novamente.");
+      console.error("Erro ao salvar preço:", error);
+      alert("Erro ao atualizar preço. Tente novamente.");
     } finally {
-      setUpdatingPrices(false);
+      setSavingPrice(false);
     }
+  };
+
+  const startEditing = (symbol: string, currentPrice: number) => {
+    setEditingSymbol(symbol);
+    setEditPrice(String(currentPrice));
   };
 
   // Loading State Global
@@ -121,26 +134,9 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER COM FILTRO DE DATA E BOTÃO DE REFRESH */}
+        {/* HEADER COM FILTRO DE DATA */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard Financeiro</h1>
-            
-            {/* BOTÃO DE ATUALIZAR COTAÇÕES */}
-            <button
-              onClick={handleUpdatePrices}
-              disabled={updatingPrices}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-full transition-all ${
-                updatingPrices 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
-              }`}
-              title="Forçar atualização de preços de mercado"
-            >
-              <span className={updatingPrices ? 'animate-spin' : ''}>🔄</span>
-              {updatingPrices ? 'A atualizar...' : 'Atualizar Cotações'}
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard Financeiro</h1>
           
           <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200 flex text-sm">
             {[
@@ -319,7 +315,40 @@ export default function Home() {
                       </td>
                       <td className="px-4 py-4 text-right text-gray-600 font-mono">{pos.quantity}</td>
                       <td className="px-4 py-4 text-right text-gray-600 font-mono">{pos.avg_buy_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
-                      <td className="px-4 py-4 text-right text-gray-600 font-mono">{pos.current_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      
+                      {/* CÉLULA DE PREÇO ATUAL EDITÁVEL */}
+                      <td className="px-4 py-4 text-right text-gray-600 font-mono">
+                        {editingSymbol === pos.symbol ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <input 
+                              type="number" 
+                              value={editPrice} 
+                              onChange={(e) => setEditPrice(e.target.value)}
+                              className="w-20 p-1 text-xs border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              autoFocus
+                            />
+                            <button 
+                              onClick={() => handleSavePrice(pos.symbol)}
+                              disabled={savingPrice}
+                              className="text-green-600 hover:text-green-800"
+                            >
+                              ✓
+                            </button>
+                            <button 
+                              onClick={() => setEditingSymbol(null)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="group flex items-center justify-end gap-2 cursor-pointer" onClick={() => startEditing(pos.symbol, pos.current_price)}>
+                            <span>{pos.current_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</span>
+                            <span className="opacity-0 group-hover:opacity-100 text-xs text-blue-400">✎</span>
+                          </div>
+                        )}
+                      </td>
+
                       <td className="px-4 py-4 text-right font-bold text-gray-800">{pos.total_value.toFixed(2)} €</td>
                       <td className={`px-4 py-4 text-right font-bold ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pos.profit_loss > 0 ? '+' : ''}{pos.profit_loss.toFixed(2)} €
