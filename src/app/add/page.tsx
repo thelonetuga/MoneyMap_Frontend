@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query'; // IMPORTADO
 
 // Definição de tipos para evitar erros de TypeScript
 interface Option {
@@ -11,6 +12,7 @@ interface Option {
 
 export default function AddTransaction() {
   const router = useRouter();
+  const queryClient = useQueryClient(); // HOOK DO REACT QUERY
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,7 +28,7 @@ export default function AddTransaction() {
     date: new Date().toISOString().split('T')[0],
     account_id: '',
     transaction_type_id: '',
-    sub_category_id: '',
+    category_id: '', 
     // Campos de Investimento
     symbol: '',
     quantity: '',
@@ -81,13 +83,13 @@ export default function AddTransaction() {
     fetchData();
   }, [router]);
 
-  // 2. DETEÇÃO DE INVESTIMENTO (Mais segura)
+  // 2. DETEÇÃO DE INVESTIMENTO (Mais segura e case-insensitive)
   const selectedType = Array.isArray(types) 
     ? types.find(t => t.id === Number(formData.transaction_type_id)) 
     : undefined;
 
   const isInvestment = selectedType 
-    ? ['Compra', 'Buy', 'Venda', 'Sell', 'Investimento'].some(k => selectedType.name.includes(k)) 
+    ? ['compra', 'buy', 'venda', 'sell', 'investimento'].some(k => selectedType.name.toLowerCase().includes(k)) 
     : false;
 
   // 3. SUBMETER FORMULÁRIO
@@ -107,7 +109,8 @@ export default function AddTransaction() {
       transaction_type_id: Number(formData.transaction_type_id),
     };
 
-    if (formData.sub_category_id) payload.sub_category_id = Number(formData.sub_category_id);
+    // CORRIGIDO: Enviar category_id em vez de sub_category_id
+    if (formData.category_id) payload.category_id = Number(formData.category_id);
 
     // Validação específica de Investimento
     if (isInvestment) {
@@ -116,7 +119,8 @@ export default function AddTransaction() {
         setLoading(false);
         return;
       }
-      payload.symbol = formData.symbol.toUpperCase(); // Forçar maiúsculas no ticker
+      // CORRIGIDO: Garantir que symbol é string antes de chamar toUpperCase
+      payload.symbol = String(formData.symbol).toUpperCase(); 
       payload.quantity = Number(formData.quantity);
       if (formData.price_per_unit) payload.price_per_unit = Number(formData.price_per_unit);
     }
@@ -133,10 +137,18 @@ export default function AddTransaction() {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.detail || 'Erro ao criar transação');
+        // CORRIGIDO: Evitar throw para satisfazer linter
+        setError(errData.detail || 'Erro ao criar transação');
+        setLoading(false);
+        return;
       }
 
-      // Sucesso
+      // SUCESSO: Invalidar cache para forçar atualização do Dashboard
+      await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+      await queryClient.invalidateQueries({ queryKey: ['history'] });
+      await queryClient.invalidateQueries({ queryKey: ['spending'] });
+      await queryClient.invalidateQueries({ queryKey: ['evolution'] });
+
       router.push('/');
       
     } catch (err: any) {
@@ -204,6 +216,7 @@ export default function AddTransaction() {
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label>
               <input 
                 name="date" type="date" required
+                max={new Date().toISOString().split('T')[0]} // BLOQUEIO DE DATA FUTURA
                 value={formData.date} onChange={handleChange}
                 className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none"
               />
@@ -226,8 +239,8 @@ export default function AddTransaction() {
              <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Categoria</label>
               <select 
-                name="sub_category_id" 
-                value={formData.sub_category_id} onChange={handleChange}
+                name="category_id" // CORRIGIDO: Nome do campo
+                value={formData.category_id} onChange={handleChange}
                 className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 <option value="">-- Nenhuma --</option>

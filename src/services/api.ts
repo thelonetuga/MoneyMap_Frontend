@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint } from '../types/api';
 
 // Ajusta a URL se o teu backend estiver noutro sítio
 export const API_URL = 'http://127.0.0.1:8000';
@@ -36,5 +37,38 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// --- SERVIÇOS DE ANALYTICS ---
+
+export const getPortfolio = async (): Promise<PortfolioResponse> => {
+  const response = await api.get('/portfolio');
+  return response.data as PortfolioResponse;
+};
+
+export const updateAssetPrices = async (): Promise<{ updated_count: number }> => {
+  const response = await api.post('/portfolio/update-prices');
+  return response.data as { updated_count: number };
+};
+
+export const getHistory = async (range: string = '30d'): Promise<HistoryPoint[]> => {
+  const response = await api.get('/analytics/history', {
+    params: { range }
+  });
+  return response.data as HistoryPoint[];
+};
+
+export const getSpending = async (range: string = '30d'): Promise<SpendingItem[]> => {
+  const response = await api.get('/analytics/spending', {
+    params: { range }
+  });
+  return response.data as SpendingItem[];
+};
+
+export const getEvolution = async (period: string = 'year'): Promise<EvolutionPoint[]> => {
+  const response = await api.get('/analytics/evolution', {
+    params: { period }
+  });
+  return response.data as EvolutionPoint[];
+};
 
 export default api;

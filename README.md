@@ -72,6 +72,6 @@ O painel principal (`src/app/page.tsx`) oferece:
 
 ## 🔌 Integração com API
 
-O frontend consome endpoints em `http://127.0.0.1:8000` (`/portfolio`, `/history`, `/analytics/spending`).
+O frontend consome endpoints em `http://127.0.0.1:8000` (`/portfolio`, `/analytics/history`, `/analytics/spending`).
 
 **Autenticação**: As requisições utilizam um token `Bearer` armazenado no `localStorage`.

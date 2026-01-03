@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
-
-// 1. IMPORTAR AQUI
-import { AuthProvider } from "../context/AuthContext"; 
+import { AuthProvider } from "../context/AuthContext";
+import ReactQueryProvider from "../lib/react-query";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,11 +20,12 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className={inter.className}>
-        {/* 2. ENVOLVER TUDO (Navbar e Children) COM O PROVIDER */}
-        <AuthProvider>
-            <Navbar />
-            {children}
-        </AuthProvider>
+        <ReactQueryProvider>
+          <AuthProvider>
+              <Navbar />
+              {children}
+          </AuthProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );
