@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { API_URL } from '@/services/api'; // IMPORTADO
+import api from '@/services/api'; // Usar Axios
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,25 +27,18 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/users/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      await api.post('/users/', { 
+        email: formData.email, 
+        password: formData.password 
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        // CORRIGIDO: Tratar erro diretamente em vez de lançar exceção local
-        setError(data.detail || 'Erro ao criar conta');
-        setLoading(false);
-        return;
-      }
 
       // Sucesso: Redirecionar para login
       router.push('/login');
     } catch (err: any) {
       console.error(err);
-      setError('Ocorreu um erro de conexão.');
+      // Tentar extrair mensagem de erro do backend
+      const msg = err.response?.data?.detail || 'Ocorreu um erro de conexão.';
+      setError(msg);
       setLoading(false);
     }
   };

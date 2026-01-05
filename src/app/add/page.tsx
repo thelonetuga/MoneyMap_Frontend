@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { API_URL } from '@/services/api'; // IMPORTADO
+import api from '@/services/api'; // Usar Axios
 
 // Definição de tipos para evitar erros de TypeScript
 interface Option {
@@ -13,11 +13,11 @@ interface Option {
 
 export default function AddTransaction() {
   const router = useRouter();
-  const queryClient = useQueryClient(); // HOOK DO REACT QUERY
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Estados para dropdowns (inicializados como arrays vazios para não quebrar o .map)
+  // Estados para dropdowns
   const [types, setTypes] = useState<Option[]>([]);
   const [accounts, setAccounts] = useState<Option[]>([]);
   const [categories, setCategories] = useState<Option[]>([]);
@@ -36,34 +36,24 @@ export default function AddTransaction() {
     price_per_unit: ''
   });
 
-  // 1. CARREGAR DADOS (Com URLs corrigidos baseados no teu setup.py)
+  // 1. CARREGAR DADOS (Usando Axios)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { router.push('/login'); return; }
-
-    const headers = { 'Authorization': `Bearer ${token}` };
-
     const fetchData = async () => {
       try {
-        console.log("A iniciar fetch de dados...");
-
-        // Usar Promise.allSettled para que se um falhar, os outros carreguem
-        const results = await Promise.all([
-          fetch(`${API_URL}/lookups/transaction-types`, { headers }).then(r => r.json()),
-          fetch(`${API_URL}/accounts`, { headers }).then(r => r.json()),
-          fetch(`${API_URL}/categories`, { headers }).then(r => r.json())
+        // Axios já trata do token e da URL base
+        const [typesRes, accountsRes, catsRes] = await Promise.all([
+          api.get('/lookups/transaction-types'),
+          api.get('/accounts'),
+          api.get('/categories')
         ]);
 
-        const [typesData, accountsData, catsData] = results;
+        const typesData = typesRes.data;
+        const accountsData = accountsRes.data;
+        const catsData = catsRes.data;
 
-        console.log("Dados recebidos:", { typesData, accountsData, catsData });
-
-        // Validação e Definição de Estados (Segurança contra "undefined")
         if (Array.isArray(typesData)) {
           setTypes(typesData);
           if (typesData.length > 0) setFormData(prev => ({ ...prev, transaction_type_id: String(typesData[0].id) }));
-        } else {
-          console.error("Tipos vieram com formato errado:", typesData);
         }
 
         if (Array.isArray(accountsData)) {
@@ -76,15 +66,15 @@ export default function AddTransaction() {
         }
 
       } catch (err) {
-        console.error("Erro fatal ao carregar dados:", err);
-        setError("Não foi possível carregar os dados. Verifica se o backend está ligado.");
+        console.error("Erro ao carregar dados:", err);
+        setError("Não foi possível carregar os dados. Verifica a conexão.");
       }
     };
 
     fetchData();
-  }, [router]);
+  }, []);
 
-  // 2. DETEÇÃO DE INVESTIMENTO (Mais segura e case-insensitive)
+  // 2. DETEÇÃO DE INVESTIMENTO
   const selectedType = Array.isArray(types) 
     ? types.find(t => t.id === Number(formData.transaction_type_id)) 
     : undefined;
@@ -98,8 +88,6 @@ export default function AddTransaction() {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    const token = localStorage.getItem('token');
     
     // Converter valores numéricos
     const payload: any = {
@@ -110,7 +98,6 @@ export default function AddTransaction() {
       transaction_type_id: Number(formData.transaction_type_id),
     };
 
-    // CORRIGIDO: Enviar category_id em vez de sub_category_id
     if (formData.category_id) payload.category_id = Number(formData.category_id);
 
     // Validação específica de Investimento
@@ -120,31 +107,15 @@ export default function AddTransaction() {
         setLoading(false);
         return;
       }
-      // CORRIGIDO: Garantir que symbol é string antes de chamar toUpperCase
       payload.symbol = String(formData.symbol).toUpperCase(); 
       payload.quantity = Number(formData.quantity);
       if (formData.price_per_unit) payload.price_per_unit = Number(formData.price_per_unit);
     }
 
     try {
-      const res = await fetch(`${API_URL}/transactions/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      await api.post('/transactions/', payload);
 
-      if (!res.ok) {
-        const errData = await res.json();
-        // CORRIGIDO: Evitar throw para satisfazer linter
-        setError(errData.detail || 'Erro ao criar transação');
-        setLoading(false);
-        return;
-      }
-
-      // SUCESSO: Invalidar cache para forçar atualização do Dashboard
+      // SUCESSO: Invalidar cache
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       await queryClient.invalidateQueries({ queryKey: ['history'] });
       await queryClient.invalidateQueries({ queryKey: ['spending'] });
@@ -154,7 +125,8 @@ export default function AddTransaction() {
       
     } catch (err: any) {
       console.error("Erro no submit:", err);
-      setError(err.message || "Ocorreu um erro desconhecido.");
+      const msg = err.response?.data?.detail || "Ocorreu um erro desconhecido.";
+      setError(msg);
       setLoading(false);
     }
   };

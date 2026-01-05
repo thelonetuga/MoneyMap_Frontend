@@ -38,6 +38,23 @@ api.interceptors.response.use(
   }
 );
 
+// --- AUTH ---
+export const loginUser = async (username: string, password: string): Promise<{ access_token: string }> => {
+  const params = new URLSearchParams();
+  params.append('username', username);
+  params.append('password', password);
+  
+  const response = await api.post('/auth/token', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+  return response.data;
+};
+
+export const registerUser = async (email: string, password: string): Promise<UserResponse> => {
+  const response = await api.post('/users/', { email, password });
+  return response.data;
+};
+
 // --- SERVIÇOS DE ANALYTICS ---
 
 export const getPortfolio = async (): Promise<PortfolioResponse> => {
@@ -79,12 +96,32 @@ export const getTransactions = async (params?: TransactionQueryParams): Promise<
   return response.data as PaginatedResponse<TransactionResponse>;
 };
 
+export const createTransaction = async (data: any): Promise<TransactionResponse> => {
+  const response = await api.post('/transactions/', data);
+  return response.data;
+};
+
 export const exportTransactions = async (): Promise<Blob> => {
   const response = await api.get('/transactions/export', { responseType: 'blob' });
   return response.data;
 };
 
-// --- SERVIÇOS DE CONTAS ---
+// --- SERVIÇOS DE CONTAS E CATEGORIAS ---
+export const getAccounts = async (): Promise<any[]> => {
+  const response = await api.get('/accounts');
+  return response.data;
+};
+
+export const getCategories = async (): Promise<any[]> => {
+  const response = await api.get('/categories');
+  return response.data;
+};
+
+export const getTransactionTypes = async (): Promise<any[]> => {
+  const response = await api.get('/lookups/transaction-types');
+  return response.data;
+};
+
 export const deleteAccount = async (id: number): Promise<void> => {
   await api.delete(`/accounts/${id}`);
 };

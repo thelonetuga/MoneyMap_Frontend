@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { API_URL } from '@/services/api'; // IMPORTADO
+import api from '@/services/api'; // Usar a instância do Axios
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,25 +18,15 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // ATUALIZADO: Usar API_URL
-      const res = await fetch(`${API_URL}/auth/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ username: email, password }),
+      // Axios lança erro automaticamente se o status não for 2xx
+      const res = await api.post('/auth/token', new URLSearchParams({ username: email, password }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
 
-      if (!res.ok) {
-        // CORRIGIDO: Tratar erro diretamente
-        setError('Email ou password incorretos.');
-        setLoading(false);
-        return;
-      }
-
-      const data = await res.json();
-      login(data.access_token);
+      login(res.data.access_token);
     } catch (err) {
       console.error(err);
-      setError('Ocorreu um erro de conexão.');
+      setError('Email ou password incorretos.');
       setLoading(false);
     }
   };
