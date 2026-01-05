@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -12,7 +12,13 @@ export default function Navbar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    // Forçar Light Mode se não for Premium/Admin
+    if (user && user.role === 'basic' && theme === 'dark') {
+      setTheme('light');
+    }
+  }, [user, theme, setTheme]);
 
   // Links styling...
   const linkStyle = (path: string) =>
@@ -48,6 +54,8 @@ export default function Navbar() {
       setTheme('dark');
     }
   };
+
+  const canToggleTheme = user?.role === 'admin' || user?.role === 'premium';
 
   return (
     <nav className="bg-white dark:bg-primary border-b border-secondary dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300 shadow-soft">
@@ -86,8 +94,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* THEME TOGGLE */}
-            {mounted && (
+            {/* THEME TOGGLE (Apenas para Premium/Admin) */}
+            {mounted && canToggleTheme && (
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors"

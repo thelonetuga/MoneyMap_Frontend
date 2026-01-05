@@ -221,6 +221,11 @@ export interface PaginatedResponse<T> {
 export interface TransactionQueryParams {
   page?: number;
   size?: number;
-  category_id?: number;
   sort_by?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+  // Novos Filtros
+  category_id?: number;
+  account_id?: number;
+  transaction_type_id?: number;
+  start_date?: string;
+  end_date?: string;
 }

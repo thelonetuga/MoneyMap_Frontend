@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, Rule } from '@/services/api';
+import { useAuth } from '@/context/AuthContext'; // Importar useAuth
 
 // --- INTERFACES ---
 interface SubCategory {
@@ -23,6 +24,7 @@ interface Account {
 }
 
 export default function SettingsPage() {
+    const { user } = useAuth(); // Obter o utilizador do contexto
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'profile' | 'accounts' | 'categories' | 'rules' | 'data'>('accounts');
 
@@ -51,6 +53,8 @@ export default function SettingsPage() {
     const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
     const [importLoading, setImportLoading] = useState(false);
 
+    const canAccessPremium = user?.role === 'admin' || user?.role === 'premium';
+
     useEffect(() => { loadAllData(); }, []);
 
     const loadAllData = async () => {
@@ -75,10 +79,10 @@ export default function SettingsPage() {
 
     // Carregar regras apenas quando a tab é aberta
     useEffect(() => {
-        if (activeTab === 'rules') {
+        if (activeTab === 'rules' && canAccessPremium) {
             getRules().then(setRules).catch(console.error);
         }
-    }, [activeTab]);
+    }, [activeTab, canAccessPremium]);
 
     // --- HANDLERS ---
 
@@ -256,8 +260,8 @@ export default function SettingsPage() {
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                 <button onClick={() => setActiveTab('accounts')} className={tabClass('accounts')}>🏦 Contas</button>
                 <button onClick={() => setActiveTab('categories')} className={tabClass('categories')}>🏷️ Categorias</button>
-                <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Regras</button>
-                <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Dados</button>
+                {canAccessPremium && <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Regras</button>}
+                {canAccessPremium && <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Dados</button>}
                 <button onClick={() => setActiveTab('profile')} className={tabClass('profile')}>👤 Perfil</button>
             </div>
 
@@ -331,7 +335,7 @@ export default function SettingsPage() {
             )}
 
             {/* TAB REGRAS (NOVO) */}
-            {activeTab === 'rules' && (
+            {activeTab === 'rules' && canAccessPremium && (
                 <div className="grid md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                         {rules.map(rule => (
@@ -366,7 +370,7 @@ export default function SettingsPage() {
             )}
 
             {/* TAB DADOS (IMPORT/EXPORT) */}
-            {activeTab === 'data' && (
+            {activeTab === 'data' && canAccessPremium && (
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* IMPORTAR */}
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700">

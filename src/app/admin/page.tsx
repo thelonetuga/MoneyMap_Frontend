@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getAdminUsers, updateUserRole, getAdminStats } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+import { getAdminUsers, updateUserRole, getAdminStats } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -55,24 +55,24 @@ export default function AdminPage() {
 
         {/* ESTATÍSTICAS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-700">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">Utilizadores Totais</span>
             <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_users || '-'}</div>
           </div>
-          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-700">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">Transações Totais</span>
             <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_transactions || '-'}</div>
           </div>
         </div>
 
         {/* TABELA DE UTILIZADORES */}
-        <div className="bg-white dark:bg-primary rounded-xl shadow-soft border border-secondary dark:border-gray-800 overflow-hidden">
-          <div className="p-6 border-b border-secondary dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-soft border border-secondary dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-secondary dark:border-gray-700">
             <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Gestão de Utilizadores</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-muted">
-              <thead className="text-xs text-muted uppercase bg-secondary dark:bg-gray-800/50">
+              <thead className="text-xs text-darkText dark:text-lightText uppercase bg-secondary dark:bg-gray-900">
                 <tr>
                   <th className="px-6 py-3">ID</th>
                   <th className="px-6 py-3">Email</th>
@@ -82,7 +82,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {usersData?.items.map((u) => (
-                  <tr key={u.id} className="border-b border-secondary dark:border-gray-800 hover:bg-secondary/50 dark:hover:bg-gray-800/50 transition-colors">
+                  <tr key={u.id} className="bg-white dark:bg-gray-800 border-b border-secondary dark:border-gray-700 hover:bg-secondary/50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 font-mono tabular-nums">{u.id}</td>
                     <td className="px-6 py-4 font-medium text-darkText dark:text-lightText">{u.email}</td>
                     <td className="px-6 py-4">
@@ -97,7 +97,7 @@ export default function AdminPage() {
                       <select
                         value={u.role}
                         onChange={(e) => mutation.mutate({ userId: u.id, role: e.target.value })}
-                        className="bg-secondary dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-darkText dark:text-lightText text-sm rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
+                        className="bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-darkText dark:text-lightText text-sm rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
                       >
                         <option value="basic">Básico</option>
                         <option value="premium">Premium</option>
@@ -111,11 +111,11 @@ export default function AdminPage() {
           </div>
           
           {/* PAGINAÇÃO */}
-          <div className="flex justify-between items-center p-4 border-t border-secondary dark:border-gray-800 bg-secondary/30 dark:bg-gray-900/30">
+          <div className="flex justify-between items-center p-4 border-t border-secondary dark:border-gray-700 bg-secondary dark:bg-gray-900">
             <span className="text-sm text-muted">Página <span className="font-bold text-darkText dark:text-lightText">{usersData?.page}</span> de <span className="font-bold text-darkText dark:text-lightText">{usersData?.pages}</span></span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 bg-white dark:bg-gray-800 border border-secondary dark:border-gray-700 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText transition-colors">Anterior</button>
-              <button onClick={() => setPage(p => p + 1)} disabled={page >= (usersData?.pages || 1)} className="px-3 py-1 bg-white dark:bg-gray-800 border border-secondary dark:border-gray-700 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText transition-colors">Próxima</button>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Anterior</button>
+              <button onClick={() => setPage(p => p + 1)} disabled={page >= (usersData?.pages || 1)} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Próxima</button>
             </div>
           </div>
         </div>

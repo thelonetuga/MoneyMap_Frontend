@@ -16,6 +16,13 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<TransactionQueryParams['sort_by']>('date_desc');
   
+  // NOVOS FILTROS
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   // Estados de Edição
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -28,12 +35,33 @@ export default function TransactionsPage() {
     if (!token) { router.push('/login'); }
   }, [router]);
 
+  // Query de Categorias e Tipos
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => api.get('/categories/').then(res => res.data) });
+  const { data: types } = useQuery({ queryKey: ['types'], queryFn: () => api.get('/lookups/transaction-types').then(res => res.data) });
+
   // Query de Transações
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['transactions', page, sortBy],
-    queryFn: () => getTransactions({ page, size: 20, sort_by: sortBy }),
+    queryKey: ['transactions', page, sortBy, filterCategory, filterType, startDate, endDate],
+    queryFn: () => getTransactions({ 
+      page, 
+      size: 20, 
+      sort_by: sortBy,
+      category_id: filterCategory ? Number(filterCategory) : undefined,
+      transaction_type_id: filterType ? Number(filterType) : undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined
+    }),
     placeholderData: (previousData) => previousData,
   });
+
+  // Reset Filters
+  const clearFilters = () => {
+    setFilterCategory('');
+    setFilterType('');
+    setStartDate('');
+    setEndDate('');
+    setPage(1);
+  };
 
   // Handlers de Seleção
   const toggleSelectAll = () => {
@@ -56,7 +84,6 @@ export default function TransactionsPage() {
   // Handlers de Ações
   const handleBulkDelete = async () => {
     if (!confirm(`Tem a certeza que deseja apagar ${selectedIds.length} transações?`)) return;
-    
     setIsBulkDeleting(true);
     try {
       await Promise.all(selectedIds.map(id => api.delete(`/transactions/${id}`)));
@@ -74,7 +101,6 @@ export default function TransactionsPage() {
 
   const handleDeleteOne = async (id: number) => {
     if (!confirm('Tem a certeza que deseja apagar esta transação?')) return;
-
     try {
       await api.delete(`/transactions/${id}`);
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -104,19 +130,11 @@ export default function TransactionsPage() {
   };
 
   if (isLoading && !data) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-400 animate-pulse font-bold">A carregar transações... 🧾</div>
-      </div>
-    );
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400 animate-pulse font-bold">A carregar transações... 🧾</div>;
   }
 
   if (isError) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-red-500">
-        Erro ao carregar transações.
-      </div>
-    );
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-red-500">Erro ao carregar transações.</div>;
   }
 
   return (
@@ -136,6 +154,13 @@ export default function TransactionsPage() {
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Extrato de Transações</h1>
             <div className="flex gap-2">
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${showFilters ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}
+              >
+                🔍 Filtros
+              </button>
+              
               <select 
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value as any)}
@@ -146,9 +171,73 @@ export default function TransactionsPage() {
                 <option value="amount_desc">Maior Valor</option>
                 <option value="amount_asc">Menor Valor</option>
               </select>
+
               <button onClick={() => router.push('/add')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">+ Nova</button>
             </div>
           </div>
+
+          {/* BARRA DE FILTROS (COLLAPSIBLE) */}
+          {showFilters && (
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
+              {/* Categoria */}
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
+                <select 
+                  value={filterCategory} 
+                  onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
+                >
+                  <option value="">Todas</option>
+                  {categories?.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+              </div>
+
+              {/* Tipo */}
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tipo</label>
+                <select 
+                  value={filterType} 
+                  onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
+                >
+                  <option value="">Todos</option>
+                  {types?.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+
+              {/* Data Início */}
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">De</label>
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
+                />
+              </div>
+
+              {/* Data Fim */}
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Até</label>
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
+                />
+              </div>
+
+              {/* Botão Limpar */}
+              <div className="col-span-1 flex items-end">
+                <button 
+                  onClick={clearFilters}
+                  className="w-full py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* BARRA DE AÇÕES EM MASSA */}
           {selectedIds.length > 0 && (

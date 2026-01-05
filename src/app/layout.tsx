@@ -36,7 +36,8 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased bg-secondary dark:bg-primary text-darkText dark:text-lightText transition-colors duration-300`}>
         <ReactQueryProvider>
           <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+            {/* Default Theme agora é LIGHT */}
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
               <Navbar />
               <div className="pb-20 md:pb-0 min-h-screen">
                 {children}
