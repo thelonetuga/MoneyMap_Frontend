@@ -168,7 +168,7 @@ export default function TransactionsPage() {
               <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                 <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="p-4 w-4"><input type="checkbox" checked={data?.items.length > 0 && selectedIds.length === data?.items.length} onChange={toggleSelectAll} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></th>
+                    <th className="p-4 w-4"><input type="checkbox" checked={(data?.items?.length ?? 0) > 0 && selectedIds.length === (data?.items?.length ?? 0)} onChange={toggleSelectAll} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></th>
                     <th className="px-6 py-3">Data</th>
                     <th className="px-6 py-3">Descrição</th>
                     <th className="px-6 py-3">Categoria</th>

@@ -1,13 +1,6 @@
 @import "tailwindcss";
 
-/* Forçar o modo dark via classe (compatibilidade com next-themes) */
-@variant dark (&:where(.dark, .dark *));
-
 @theme {
-  /* Fonts */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-
   /* Colors */
   --color-primary: #0F172A;
   --color-secondary: #F1F5F9;
@@ -35,6 +28,9 @@
   --radius-lg: 8px;
 }
 
+/* Forçar Dark Mode via classe 'dark' (Tailwind v4) */
+@variant dark (&:where(.dark, .dark *));
+
 /* Base Styles */
 body {
   @apply bg-secondary dark:bg-primary text-darkText dark:text-lightText transition-colors duration-300;
@@ -42,7 +38,9 @@ body {
 
 /* Typography Defaults */
 h1, h2, h3, h4, h5, h6 {
-  @apply font-heading tracking-tight;
+  font-family: var(--font-jakarta);
+  letter-spacing: -0.02em;
+  @apply font-bold;
 }
 
 /* Tabular Figures for Numbers */
