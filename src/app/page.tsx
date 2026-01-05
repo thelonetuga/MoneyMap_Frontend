@@ -7,9 +7,9 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   AreaChart, Area, XAxis, YAxis, CartesianGrid
 } from 'recharts';
-import { getPortfolio, getHistory, getSpending, updateManualPrice } from '../services/api'; // IMPORTADO updateManualPrice
+import { getPortfolio, getHistory, getSpending, updateManualPrice } from '@/services/api'; 
 import EvolutionChart from '../components/EvolutionChart';
-import { PortfolioPosition } from '../types/api';
+import { PortfolioPosition } from '@/types/models'; 
 
 // Cores: Investimentos (Azuis) vs Despesas (Laranjas/Vermelhos)
 const COLORS_INVEST = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -76,7 +76,7 @@ export default function Home() {
   // Loading State Global
   if (loadingPortfolio) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-400 font-bold animate-pulse">
+      <div className="flex h-screen items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">
         A carregar o seu império... 🏰
       </div>
     );
@@ -85,7 +85,7 @@ export default function Home() {
   // Se der erro no portfolio
   if (errorPortfolio || !portfolio) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 text-red-500 font-bold">
+      <div className="flex h-screen items-center justify-center bg-secondary dark:bg-primary text-error font-heading font-bold">
         Erro ao carregar dados. Tente fazer login novamente.
       </div>
     );
@@ -131,14 +131,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
+    <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         
         {/* HEADER COM FILTRO DE DATA */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard Financeiro</h1>
+          <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText">Dashboard Financeiro</h1>
           
-          <div className="bg-white p-1 rounded-lg shadow-sm border border-gray-200 flex text-sm">
+          <div className="bg-white dark:bg-primary p-1 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex text-sm">
             {[
               { id: '7d', label: '7D' },
               { id: '30d', label: '30D' },
@@ -150,10 +150,10 @@ export default function Home() {
               <button
                 key={option.id}
                 onClick={() => setTimeRange(option.id)}
-                className={`px-3 py-1.5 rounded-md transition-all font-medium ${
+                className={`px-3 py-1.5 rounded-lg transition-all font-medium ${
                   timeRange === option.id 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                    ? 'bg-accent text-primary shadow-sm font-bold' 
+                    : 'text-muted hover:bg-secondary dark:hover:bg-gray-800 hover:text-darkText dark:hover:text-lightText'
                 }`}
               >
                 {option.label}
@@ -164,17 +164,18 @@ export default function Home() {
 
         {/* 1. CARTÕES DE RESUMO */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200">
-            <span className="text-blue-100 text-xs font-bold uppercase tracking-wider">Património Total</span>
-            <div className="text-3xl font-bold mt-1">{calculatedNetWorth.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+          <div className="bg-primary rounded-xl p-6 text-lightText shadow-soft border border-gray-800 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-accent/20"></div>
+            <span className="text-accent text-xs font-bold uppercase tracking-wider">Património Total</span>
+            <div className="text-3xl font-heading font-bold mt-1 tabular-nums">{calculatedNetWorth.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-            <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">💰 Liquidez (Bancos)</span>
-            <div className="text-2xl font-bold text-gray-800 mt-1">{portfolio.total_cash.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+          <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidez (Bancos)</span>
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{portfolio.total_cash.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-            <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">📈 Total Investido</span>
-            <div className="text-2xl font-bold text-gray-800 mt-1">{calculatedTotalInvested.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+          <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Investido</span>
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{calculatedTotalInvested.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
         </div>
 
@@ -182,40 +183,42 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
           {/* GRÁFICO DE ÁREA (Evolução) */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="lg:col-span-2 bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-700">Evolução Patrimonial</h2>
-              <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded">{getRangeLabel(timeRange)}</span>
+              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Evolução Patrimonial</h2>
+              <span className="text-xs font-medium text-muted bg-secondary dark:bg-gray-800 px-2 py-1 rounded-lg">{getRangeLabel(timeRange)}</span>
             </div>
             
             <div className="h-72 w-full">
               {loadingHistory ? (
-                <div className="h-full flex items-center justify-center text-gray-300 animate-pulse">A carregar gráfico...</div>
+                <div className="h-full flex items-center justify-center text-muted animate-pulse">A carregar gráfico...</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={Array.isArray(history) ? history : []}>
                     <defs>
                       <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#00DC82" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#00DC82" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94A3B8" strokeOpacity={0.2} />
                     <XAxis 
                       dataKey="date" 
-                      tick={{ fontSize: 12 }} 
+                      tick={{ fontSize: 12, fill: '#94A3B8' }} 
                       tickFormatter={(str) => {
                         if (!str) return '';
-                        // Se for "all" ou "1y", mostra o ano/mês. Senão, dia/mês.
                         if (timeRange === 'all' || timeRange === '1y') return str.slice(0, 7);
                         return str.slice(8, 10) + '/' + str.slice(5, 7);
                       }} 
-                      stroke="#9ca3af" 
+                      stroke="#94A3B8" 
                       minTickGap={30}
                     />
                     <YAxis hide={true} domain={['auto', 'auto']} />
-                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value: any) => [Number(value).toFixed(2) + ' €', 'Património']} />
-                    <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', backgroundColor: 'var(--tooltip-bg, #fff)' }} 
+                      formatter={(value: any) => [Number(value).toFixed(2) + ' €', 'Património']} 
+                    />
+                    <Area type="monotone" dataKey="value" stroke="#00DC82" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -223,35 +226,35 @@ export default function Home() {
           </div>
 
           {/* GRÁFICO DE DESPESAS */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-lg font-bold text-gray-700">Despesas</h2>
+              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Despesas</h2>
               <div className="flex flex-col items-end">
-                <span className="text-xs font-medium text-gray-400 mb-1">{getRangeLabel(timeRange)}</span>
-                <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded-full">
+                <span className="text-xs font-medium text-muted mb-1">{getRangeLabel(timeRange)}</span>
+                <span className="text-xs bg-error/10 text-error font-bold px-2 py-1 rounded-full">
                   Total: {totalSpending.toFixed(0)}€
                 </span>
               </div>
             </div>
 
             {loadingSpending ? (
-               <div className="flex-1 flex items-center justify-center text-gray-300 animate-pulse">A carregar...</div>
+               <div className="flex-1 flex items-center justify-center text-muted animate-pulse">A carregar...</div>
             ) : (spending && spending.length > 0) ? (
               <div className="flex-1 min-h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={spending} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                       {spending.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS_SPEND[index % COLORS_SPEND.length]} />
+                        <Cell key={`cell-${index}`} fill={COLORS_SPEND[index % COLORS_SPEND.length]} stroke="none" />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: any) => Number(value).toFixed(2) + ' €'} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-400 text-sm italic text-center p-4">
+              <div className="flex-1 flex items-center justify-center text-muted text-sm italic text-center p-4">
                 Sem despesas neste período.<br />
                 Tente selecionar outro intervalo! 📅
               </div>
@@ -268,35 +271,35 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* GRÁFICO INVESTIMENTOS */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-700 mb-4">Portfólio</h2>
+          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Portfólio</h2>
             {chartInvest.length > 0 ? (
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartInvest} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                       {chartInvest.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS_INVEST[index % COLORS_INVEST.length]} />
+                        <Cell key={`cell-${index}`} fill={COLORS_INVEST[index % COLORS_INVEST.length]} stroke="none" />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: any) => Number(value).toFixed(2) + ' €'} />
-                    <Legend />
+                    <Legend wrapperStyle={{ color: '#94A3B8' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-gray-400 text-sm italic">
+              <div className="h-64 flex items-center justify-center text-muted text-sm italic">
                 Sem investimentos ativos.
               </div>
             )}
           </div>
 
           {/* TABELA DE POSIÇÕES */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <h2 className="text-lg font-bold text-gray-700 mb-4">Detalhe dos Ativos</h2>
+          <div className="lg:col-span-2 bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 overflow-hidden">
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Detalhe dos Ativos</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-500 uppercase bg-gray-50">
+                <thead className="text-xs text-muted uppercase bg-secondary dark:bg-gray-800/50">
                   <tr>
                     <th className="px-4 py-3 rounded-l-lg">Ativo</th>
                     <th className="px-4 py-3 text-right">Qtd</th>
@@ -308,35 +311,35 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {aggregatedPositions.map((pos, index) => (
-                    <tr key={`${pos.symbol}-${index}`} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-4 font-medium text-gray-900 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <tr key={`${pos.symbol}-${index}`} className="border-b border-secondary dark:border-gray-800 last:border-0 hover:bg-secondary/50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="px-4 py-4 font-medium text-darkText dark:text-lightText flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-accent"></span>
                         {pos.symbol}
                       </td>
-                      <td className="px-4 py-4 text-right text-gray-600 font-mono">{pos.quantity}</td>
-                      <td className="px-4 py-4 text-right text-gray-600 font-mono">{pos.avg_buy_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      <td className="px-4 py-4 text-right text-muted font-mono tabular-nums">{pos.quantity}</td>
+                      <td className="px-4 py-4 text-right text-muted font-mono tabular-nums">{pos.avg_buy_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
                       
                       {/* CÉLULA DE PREÇO ATUAL EDITÁVEL */}
-                      <td className="px-4 py-4 text-right text-gray-600 font-mono">
+                      <td className="px-4 py-4 text-right text-muted font-mono tabular-nums">
                         {editingSymbol === pos.symbol ? (
                           <div className="flex items-center justify-end gap-1">
                             <input 
                               type="number" 
                               value={editPrice} 
                               onChange={(e) => setEditPrice(e.target.value)}
-                              className="w-20 p-1 text-xs border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-20 p-1 text-xs border border-accent rounded focus:outline-none focus:ring-1 focus:ring-accent bg-white dark:bg-gray-800 text-darkText dark:text-lightText"
                               autoFocus
                             />
                             <button 
                               onClick={() => handleSavePrice(pos.symbol)}
                               disabled={savingPrice}
-                              className="text-green-600 hover:text-green-800"
+                              className="text-accent hover:text-green-400"
                             >
                               ✓
                             </button>
                             <button 
                               onClick={() => setEditingSymbol(null)}
-                              className="text-red-500 hover:text-red-700"
+                              className="text-error hover:text-red-400"
                             >
                               ✕
                             </button>
@@ -344,19 +347,19 @@ export default function Home() {
                         ) : (
                           <div className="group flex items-center justify-end gap-2 cursor-pointer" onClick={() => startEditing(pos.symbol, pos.current_price)}>
                             <span>{pos.current_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</span>
-                            <span className="opacity-0 group-hover:opacity-100 text-xs text-blue-400">✎</span>
+                            <span className="opacity-0 group-hover:opacity-100 text-xs text-accent">✎</span>
                           </div>
                         )}
                       </td>
 
-                      <td className="px-4 py-4 text-right font-bold text-gray-800">{pos.total_value.toFixed(2)} €</td>
-                      <td className={`px-4 py-4 text-right font-bold ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <td className="px-4 py-4 text-right font-bold text-darkText dark:text-lightText tabular-nums">{pos.total_value.toFixed(2)} €</td>
+                      <td className={`px-4 py-4 text-right font-bold tabular-nums ${pos.profit_loss >= 0 ? 'text-success' : 'text-error'}`}>
                         {pos.profit_loss > 0 ? '+' : ''}{pos.profit_loss.toFixed(2)} €
                       </td>
                     </tr>
                   ))}
                   {aggregatedPositions.length === 0 && (
-                    <tr><td colSpan={6} className="p-8 text-center text-gray-400">Ainda não tem investimentos. Vá a "Adicionar" para começar! 🚀</td></tr>
+                    <tr><td colSpan={6} className="p-8 text-center text-muted">Ainda não tem investimentos. Vá a "Adicionar" para começar! 🚀</td></tr>
                   )}
                 </tbody>
               </table>

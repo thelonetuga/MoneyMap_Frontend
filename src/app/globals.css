@@ -1,23 +1,71 @@
 @import "tailwindcss";
 
-/* Definir o estilo base para toda a aplicação */
-body {
-  @apply bg-gray-50 text-gray-900;
-  /* bg-gray-50: Fundo cinza muito suave (bom para dashboards) */
-  /* text-gray-900: Texto quase preto (melhor leitura que preto puro) */
+/* Forçar o modo dark via classe (compatibilidade com next-themes) */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Fonts */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* Colors */
+  --color-primary: #0F172A;
+  --color-secondary: #F1F5F9;
+  --color-accent: #00DC82;
+  --color-error: #FF6B6B;
+  --color-success: #00DC82;
+  --color-danger: #FF6B6B;
+
+  --color-darkText: #1E293B;
+  --color-lightText: #F8FAFC;
+  --color-muted: #94A3B8;
+
+  /* UI Aliases */
+  --color-surface: #FFFFFF;
+  --color-abyss-navy: #0F172A;
+  --color-cool-grey: #F1F5F9;
+  --color-neon-mint: #00DC82;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 15px rgba(0, 220, 130, 0.3);
+
+  /* Radius */
+  --radius-xl: 16px;
+  --radius-lg: 8px;
 }
 
-/* Opcional: Estilos para Scrollbar mais bonitos */
+/* Base Styles */
+body {
+  @apply bg-secondary dark:bg-primary text-darkText dark:text-lightText transition-colors duration-300;
+}
+
+/* Typography Defaults */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-heading tracking-tight;
+}
+
+/* Tabular Figures for Numbers */
+.tabular-nums {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  @apply bg-gray-300 dark:bg-gray-700 rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  @apply bg-gray-400 dark:bg-gray-600;
+}
+
+/* Utility for Glassmorphism */
+.glass {
+  @apply bg-white/80 dark:bg-primary/80 backdrop-blur-md border border-white/20 dark:border-white/10;
 }

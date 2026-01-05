@@ -1,134 +1,125 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import api from '@/services/api';
-import { useAuth } from '@/context/AuthContext';
-
-interface UserData {
-    id: number;
-    email: string;
-    role: 'basic' | 'premium' | 'admin';
-    created_at: string;
-    profile?: {
-        first_name: string;
-    };
-}
+import { getAdminUsers, updateUserRole, getAdminStats } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminPage() {
-    const { user, loading: authLoading } = useAuth();
-    const router = useRouter();
-    
-    const [usersList, setUsersList] = useState<UserData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
 
-    useEffect(() => {
-        if (authLoading) return;
+  // Verificar se é admin
+  useEffect(() => {
+    if (!authLoading && user?.role !== 'admin') {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
 
-        // Segurança Frontend: Se não for admin, manda para casa
-        if (!user || user.role !== 'admin') {
-            router.push('/');
-            return;
-        }
+  // Queries
+  const { data: usersData, isLoading: usersLoading } = useQuery({
+    queryKey: ['admin-users', page],
+    queryFn: () => getAdminUsers(page),
+    enabled: user?.role === 'admin',
+  });
 
-        loadUsers();
-    }, [user, authLoading, router]);
+  const { data: statsData } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: getAdminStats,
+    enabled: user?.role === 'admin',
+  });
 
-    const loadUsers = async () => {
-        try {
-            const res = await api.get('/users/');
-            setUsersList(res.data);
-        } catch (err) {
-            console.error(err);
-            setError('Erro ao carregar lista de utilizadores.');
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Mutation para mudar role
+  const mutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: string }) => updateUserRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      alert('Role atualizada com sucesso!');
+    },
+    onError: () => alert('Erro ao atualizar role.'),
+  });
 
-    const handleChangeRole = async (userId: number, newRole: string) => {
-        if(!confirm(`Tem a certeza que quer mudar este user para ${newRole}?`)) return;
-        
-        try {
-            // Nota: O backend espera um query param ?role=...
-            await api.put(`/users/${userId}/role?role=${newRole}`);
-            
-            // Atualizar lista localmente
-            setUsersList(usersList.map(u => 
-                u.id === userId ? { ...u, role: newRole as any } : u
-            ));
-        } catch (err) {
-            alert('Erro ao atualizar permissões.');
-        }
-    };
+  if (authLoading || (usersLoading && !usersData)) {
+    return <div className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">A carregar painel de admin... 🛡️</div>;
+  }
 
-    if (authLoading || loading) return <div className="p-10 text-center text-gray-500">A carregar painel de controlo... 🔐</div>;
+  if (user?.role !== 'admin') return null;
 
-    return (
-        <main className="min-h-screen bg-gray-50 p-8">
-            <div className="max-w-7xl mx-auto">
-                <header className="mb-8 flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Administração 🛡️</h1>
-                        <p className="text-gray-500">Gestão de utilizadores e sistema</p>
-                    </div>
-                    <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
-                        <span className="font-bold text-blue-600 text-lg">{usersList.length}</span>
-                        <span className="text-gray-500 text-sm ml-2">Utilizadores Totais</span>
-                    </div>
-                </header>
+  return (
+    <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">Painel de Administração 🛡️</h1>
 
-                {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6">{error}</div>}
+        {/* ESTATÍSTICAS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">Utilizadores Totais</span>
+            <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_users || '-'}</div>
+          </div>
+          <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">Transações Totais</span>
+            <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_transactions || '-'}</div>
+          </div>
+        </div>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50 border-b border-gray-100">
-                                <tr>
-                                    <th className="p-5 text-xs font-bold text-gray-500 uppercase">ID</th>
-                                    <th className="p-5 text-xs font-bold text-gray-500 uppercase">Utilizador</th>
-                                    <th className="p-5 text-xs font-bold text-gray-500 uppercase">Email</th>
-                                    <th className="p-5 text-xs font-bold text-gray-500 uppercase">Role</th>
-                                    <th className="p-5 text-xs font-bold text-gray-500 uppercase text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {usersList.map(u => (
-                                    <tr key={u.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="p-5 text-gray-400 font-mono text-xs">#{u.id}</td>
-                                        <td className="p-5 font-bold text-gray-800">
-                                            {u.profile?.first_name || 'Sem nome'}
-                                        </td>
-                                        <td className="p-5 text-gray-600">{u.email}</td>
-                                        <td className="p-5">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                                u.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                                                u.role === 'premium' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                                'bg-gray-50 text-gray-600 border-gray-200'
-                                            }`}>
-                                                {u.role.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="p-5 text-right">
-                                            <select 
-                                                className="text-sm border border-gray-200 rounded-lg p-2 outline-none focus:border-blue-500"
-                                                value={u.role}
-                                                onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                                                disabled={u.id === user?.id} // Não te podes despromover a ti próprio
-                                            >
-                                                <option value="basic">Basic</option>
-                                                <option value="premium">Premium</option>
-                                                <option value="admin">Admin</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        {/* TABELA DE UTILIZADORES */}
+        <div className="bg-white dark:bg-primary rounded-xl shadow-soft border border-secondary dark:border-gray-800 overflow-hidden">
+          <div className="p-6 border-b border-secondary dark:border-gray-800">
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Gestão de Utilizadores</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-muted">
+              <thead className="text-xs text-muted uppercase bg-secondary dark:bg-gray-800/50">
+                <tr>
+                  <th className="px-6 py-3">ID</th>
+                  <th className="px-6 py-3">Email</th>
+                  <th className="px-6 py-3">Role Atual</th>
+                  <th className="px-6 py-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersData?.items.map((u) => (
+                  <tr key={u.id} className="border-b border-secondary dark:border-gray-800 hover:bg-secondary/50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-6 py-4 font-mono tabular-nums">{u.id}</td>
+                    <td className="px-6 py-4 font-medium text-darkText dark:text-lightText">{u.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                        u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                        u.role === 'premium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={u.role}
+                        onChange={(e) => mutation.mutate({ userId: u.id, role: e.target.value })}
+                        className="bg-secondary dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-darkText dark:text-lightText text-sm rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
+                      >
+                        <option value="basic">Básico</option>
+                        <option value="premium">Premium</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* PAGINAÇÃO */}
+          <div className="flex justify-between items-center p-4 border-t border-secondary dark:border-gray-800 bg-secondary/30 dark:bg-gray-900/30">
+            <span className="text-sm text-muted">Página <span className="font-bold text-darkText dark:text-lightText">{usersData?.page}</span> de <span className="font-bold text-darkText dark:text-lightText">{usersData?.pages}</span></span>
+            <div className="flex gap-2">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 bg-white dark:bg-gray-800 border border-secondary dark:border-gray-700 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText transition-colors">Anterior</button>
+              <button onClick={() => setPage(p => p + 1)} disabled={page >= (usersData?.pages || 1)} className="px-3 py-1 bg-white dark:bg-gray-800 border border-secondary dark:border-gray-700 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText transition-colors">Próxima</button>
             </div>
-        </main>
-    );
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }

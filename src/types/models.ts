@@ -196,6 +196,7 @@ export interface HistoryPoint {
 export interface SpendingItem {
   name: string;
   value: number;
+  [key: string]: any; // Assinatura de índice para Recharts
 }
 
 export interface EvolutionPoint {

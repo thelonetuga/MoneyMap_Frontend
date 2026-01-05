@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams } from '../types/api';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse } from '../types/models';
 
 // Ajusta a URL se o teu backend estiver noutro sítio
 export const API_URL = 'http://127.0.0.1:8000';
@@ -79,9 +79,52 @@ export const getTransactions = async (params?: TransactionQueryParams): Promise<
   return response.data as PaginatedResponse<TransactionResponse>;
 };
 
+export const exportTransactions = async (): Promise<Blob> => {
+  const response = await api.get('/transactions/export', { responseType: 'blob' });
+  return response.data;
+};
+
 // --- SERVIÇOS DE CONTAS ---
 export const deleteAccount = async (id: number): Promise<void> => {
   await api.delete(`/accounts/${id}`);
+};
+
+// --- SERVIÇOS DE REGRAS (AUTOMATION) ---
+export interface Rule {
+  id: number;
+  pattern: string;
+  category_id: number;
+  category_name?: string; // Opcional para display
+}
+
+export const getRules = async (): Promise<Rule[]> => {
+  const response = await api.get('/rules');
+  return response.data as Rule[];
+};
+
+export const createRule = async (pattern: string, category_id: number): Promise<Rule> => {
+  const response = await api.post('/rules', { pattern, category_id });
+  return response.data as Rule;
+};
+
+export const deleteRule = async (id: number): Promise<void> => {
+  await api.delete(`/rules/${id}`);
+};
+
+// --- SERVIÇOS DE ADMIN ---
+
+export const getAdminUsers = async (page: number = 1): Promise<PaginatedResponse<UserResponse>> => {
+  const response = await api.get('/admin/users', { params: { page, size: 20 } });
+  return response.data as PaginatedResponse<UserResponse>;
+};
+
+export const updateUserRole = async (userId: number, role: string): Promise<void> => {
+  await api.patch(`/admin/users/${userId}/role`, { role });
+};
+
+export const getAdminStats = async (): Promise<{ total_users: number; total_transactions: number }> => {
+  const response = await api.get('/admin/stats');
+  return response.data as { total_users: number; total_transactions: number };
 };
 
 export default api;

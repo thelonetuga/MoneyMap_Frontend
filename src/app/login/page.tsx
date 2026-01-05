@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // O AuthContext já faz o push, mas podemos manter por segurança
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext'; // <--- IMPORTANTE: Usar o Contexto
-import api from '@/services/api'; // <--- IMPORTANTE: Usar o Axios configurado
+import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
 
 export default function LoginPage() {
-    const { login } = useAuth(); // Vamos usar a função login do contexto
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -19,28 +19,20 @@ export default function LoginPage() {
         setError('');
 
         try {
-            // 1. Preparar os dados no formato OAuth2 padrão (x-www-form-urlencoded)
             const params = new URLSearchParams();
-            params.append('username', email); // Mapear email para username
+            params.append('username', email);
             params.append('password', password);
 
-            // 2. Enviar pedido usando o cliente API
             const res = await api.post('/token', params, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
-            // 3. Usar a função login do contexto
-            // Isto guarda o token E atualiza o estado global da App imediatamente
             login(res.data.access_token); 
             
-            // Nota: O router.push('/') geralmente é feito dentro do login(), 
-            // mas não faz mal estar lá também.
-
         } catch (err: any) {
             console.error(err);
-            // Mensagem de erro amigável
             if (err.response?.status === 401) {
                 setError('Email ou password incorretos.');
             } else {
@@ -51,23 +43,23 @@ export default function LoginPage() {
         }
     };
 
-    // Classes de estilo
-    const inputClass = "w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900 placeholder:text-gray-500 font-medium";
-    const labelClass = "block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 ml-1";
+    // Classes de estilo atualizadas para Dark Mode
+    const inputClass = "w-full p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-600 transition-all text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 font-medium";
+    const labelClass = "block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1";
 
     return (
-        <main className="min-h-screen bg-gray-50/50 flex items-center justify-center p-6">
-            <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-8 md:p-10 animate-in fade-in zoom-in duration-500">
+        <main className="min-h-screen bg-gray-50/50 dark:bg-gray-900 flex items-center justify-center p-6 transition-colors duration-200">
+            <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 p-8 md:p-10 animate-in fade-in zoom-in duration-500">
 
                 <div className="text-center mb-10">
-                    <h1 className="text-4xl font-bold text-blue-600 mb-2">MoneyMap 🌍</h1>
-                    <p className="text-gray-500 font-medium">Bem-vindo de volta!</p>
+                    <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">MoneyMap 🌍</h1>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Bem-vindo de volta!</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
 
                     {error && (
-                        <div className="p-4 bg-red-50 text-red-600 text-sm font-bold rounded-xl border border-red-100 text-center">
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl border border-red-100 dark:border-red-800 text-center">
                             {error} ⚠️
                         </div>
                     )}
@@ -99,15 +91,15 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 mt-4 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                        className={`w-full py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 mt-4 ${loading ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
                             }`}
                     >
                         {loading ? 'A entrar...' : 'Entrar 🔐'}
                     </button>
                 </form>
 
-                <div className="mt-8 text-center text-sm text-gray-400">
-                    Ainda não tem conta? <Link href="/register" className="text-blue-600 font-bold hover:underline">Registar</Link>
+                <div className="mt-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                    Ainda não tem conta? <Link href="/register" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">Registar</Link>
                 </div>
             </div>
         </main>

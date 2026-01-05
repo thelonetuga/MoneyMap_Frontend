@@ -163,14 +163,14 @@ export default function AddTransaction() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-lg w-full border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 flex items-center justify-center transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-lg w-full border border-gray-100 dark:border-gray-700">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
           💸 Nova Transação
         </h1>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg font-medium">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg font-medium">
             ⚠️ {error}
           </div>
         )}
@@ -180,20 +180,20 @@ export default function AddTransaction() {
           {/* DESCRIÇÃO E VALOR */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrição</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
               <input 
                 name="description" required
                 value={formData.description} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
                 placeholder="Ex: Café"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Valor (€)</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor (€)</label>
               <input 
                 name="amount" type="number" step="0.01" required
                 value={formData.amount} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none font-mono"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none font-mono"
                 placeholder="0.00"
               />
             </div>
@@ -202,23 +202,23 @@ export default function AddTransaction() {
           {/* TIPO E DATA */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tipo</label>
               <select 
                 name="transaction_type_id" 
                 value={formData.transaction_type_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 {types.length === 0 && <option value="">A carregar...</option>}
                 {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Data</label>
               <input 
                 name="date" type="date" required
                 max={new Date().toISOString().split('T')[0]} // BLOQUEIO DE DATA FUTURA
                 value={formData.date} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
               />
             </div>
           </div>
@@ -226,22 +226,22 @@ export default function AddTransaction() {
           {/* CONTA E CATEGORIA */}
           <div className="grid grid-cols-2 gap-4">
              <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Conta</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Conta</label>
               <select 
                 name="account_id" 
                 value={formData.account_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 {accounts.length === 0 && <option value="">A carregar...</option>}
                 {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
              <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Categoria</label>
+              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
               <select 
                 name="category_id" // CORRIGIDO: Nome do campo
                 value={formData.category_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
               >
                 <option value="">-- Nenhuma --</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -251,40 +251,40 @@ export default function AddTransaction() {
 
           {/* CAMPOS DE INVESTIMENTO (Só aparecem se for Compra/Venda) */}
           {isInvestment && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <h3 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+              <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
                 📈 Dados do Ativo
               </h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
-                  <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Ticker</label>
+                  <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Ticker</label>
                   <input 
                     name="symbol" 
                     value={formData.symbol} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 focus:ring-2 focus:ring-blue-500 text-sm uppercase"
+                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm uppercase"
                     placeholder="AAPL"
                   />
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Quantidade</label>
+                  <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Quantidade</label>
                   <input 
                     name="quantity" type="number" step="any"
                     value={formData.quantity} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder="0.0"
                   />
                 </div>
                 <div className="col-span-1">
-                   <label className="block text-[10px] font-bold text-blue-600 uppercase mb-1">Preço/Un. (Op)</label>
+                   <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Preço/Un. (Op)</label>
                   <input 
                     name="price_per_unit" type="number" step="0.01"
                     value={formData.price_per_unit} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder="Auto"
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-blue-400 mt-2 italic">
+              <p className="text-[10px] text-blue-400 dark:text-blue-500 mt-2 italic">
                 Deixa o "Preço/Un" vazio para calcular automaticamente (Total / Qtd).
               </p>
             </div>
@@ -293,7 +293,7 @@ export default function AddTransaction() {
           <div className="pt-4 flex flex-col gap-3">
             <button 
               type="submit" disabled={loading}
-              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:opacity-50"
+              className="w-full bg-gray-900 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:opacity-50"
             >
               {loading ? 'A processar...' : 'Confirmar'}
             </button>
@@ -301,7 +301,7 @@ export default function AddTransaction() {
              <button 
               type="button"
               onClick={() => router.back()}
-              className="w-full bg-white border border-gray-200 text-gray-600 font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-medium py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               Cancelar
             </button>
