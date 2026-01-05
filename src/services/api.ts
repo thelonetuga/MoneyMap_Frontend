@@ -69,32 +69,32 @@ export const registerUser = async (email: string, password: string): Promise<Use
 // --- SERVIÇOS DE ANALYTICS ---
 
 export const getPortfolio = async (): Promise<PortfolioResponse> => {
-  const response = await api.get('/portfolio');
+  const response = await api.get('/portfolio/');
   return response.data as PortfolioResponse;
 };
 
 // REMOVIDO: updateAssetPrices (Automático)
 // NOVO: Atualização Manual
 export const updateManualPrice = async (symbol: string, price: number): Promise<void> => {
-  await api.post('/portfolio/price', { symbol, price });
+  await api.post('/portfolio/price/', { symbol, price });
 };
 
 export const getHistory = async (range: string = '30d'): Promise<HistoryPoint[]> => {
-  const response = await api.get('/analytics/history', {
+  const response = await api.get('/analytics/history/', {
     params: { range }
   });
   return response.data as HistoryPoint[];
 };
 
 export const getSpending = async (range: string = '30d'): Promise<SpendingItem[]> => {
-  const response = await api.get('/analytics/spending', {
+  const response = await api.get('/analytics/spending/', {
     params: { range }
   });
   return response.data as SpendingItem[];
 };
 
 export const getEvolution = async (period: string = 'year', time_range: string = 'all'): Promise<EvolutionPoint[]> => {
-  const response = await api.get('/analytics/evolution', {
+  const response = await api.get('/analytics/evolution/', {
     params: { period, time_range }
   });
   return response.data as EvolutionPoint[];
@@ -103,7 +103,7 @@ export const getEvolution = async (period: string = 'year', time_range: string =
 // --- SERVIÇOS DE TRANSAÇÕES ---
 
 export const getTransactions = async (params?: TransactionQueryParams): Promise<PaginatedResponse<TransactionResponse>> => {
-  const response = await api.get('/transactions', { params });
+  const response = await api.get('/transactions/', { params });
   return response.data as PaginatedResponse<TransactionResponse>;
 };
 
@@ -113,28 +113,28 @@ export const createTransaction = async (data: any): Promise<TransactionResponse>
 };
 
 export const exportTransactions = async (): Promise<Blob> => {
-  const response = await api.get('/transactions/export', { responseType: 'blob' });
+  const response = await api.get('/transactions/export/', { responseType: 'blob' });
   return response.data;
 };
 
 // --- SERVIÇOS DE CONTAS E CATEGORIAS ---
 export const getAccounts = async (): Promise<any[]> => {
-  const response = await api.get('/accounts');
+  const response = await api.get('/accounts/');
   return response.data;
 };
 
 export const getCategories = async (): Promise<any[]> => {
-  const response = await api.get('/categories');
+  const response = await api.get('/categories/');
   return response.data;
 };
 
 export const getTransactionTypes = async (): Promise<any[]> => {
-  const response = await api.get('/lookups/transaction-types');
+  const response = await api.get('/lookups/transaction-types/');
   return response.data;
 };
 
 export const deleteAccount = async (id: number): Promise<void> => {
-  await api.delete(`/accounts/${id}`);
+  await api.delete(`/accounts/${id}/`);
 };
 
 // --- SERVIÇOS DE REGRAS (AUTOMATION) ---
@@ -146,32 +146,32 @@ export interface Rule {
 }
 
 export const getRules = async (): Promise<Rule[]> => {
-  const response = await api.get('/rules');
+  const response = await api.get('/rules/');
   return response.data as Rule[];
 };
 
 export const createRule = async (pattern: string, category_id: number): Promise<Rule> => {
-  const response = await api.post('/rules', { pattern, category_id });
+  const response = await api.post('/rules/', { pattern, category_id });
   return response.data as Rule;
 };
 
 export const deleteRule = async (id: number): Promise<void> => {
-  await api.delete(`/rules/${id}`);
+  await api.delete(`/rules/${id}/`);
 };
 
 // --- SERVIÇOS DE ADMIN ---
 
 export const getAdminUsers = async (page: number = 1): Promise<PaginatedResponse<UserResponse>> => {
-  const response = await api.get('/admin/users', { params: { page, size: 20 } });
+  const response = await api.get('/admin/users/', { params: { page, size: 20 } });
   return response.data as PaginatedResponse<UserResponse>;
 };
 
 export const updateUserRole = async (userId: number, role: string): Promise<void> => {
-  await api.patch(`/admin/users/${userId}/role`, { role });
+  await api.patch(`/admin/users/${userId}/role/`, { role });
 };
 
 export const getAdminStats = async (): Promise<{ total_users: number; total_transactions: number }> => {
-  const response = await api.get('/admin/stats');
+  const response = await api.get('/admin/stats/');
   return response.data as { total_users: number; total_transactions: number };
 };
 
