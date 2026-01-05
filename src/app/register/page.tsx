@@ -27,7 +27,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/users/`, { // USAR API_URL
+      const res = await fetch(`${API_URL}/users/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password }),
@@ -35,13 +35,17 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.detail || 'Erro ao criar conta');
+        // CORRIGIDO: Tratar erro diretamente em vez de lançar exceção local
+        setError(data.detail || 'Erro ao criar conta');
+        setLoading(false);
+        return;
       }
 
       // Sucesso: Redirecionar para login
       router.push('/login');
     } catch (err: any) {
-      setError(err.message);
+      console.error(err);
+      setError('Ocorreu um erro de conexão.');
       setLoading(false);
     }
   };

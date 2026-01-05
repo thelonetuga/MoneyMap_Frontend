@@ -25,12 +25,18 @@ export default function LoginPage() {
         body: new URLSearchParams({ username: email, password }),
       });
 
-      if (!res.ok) throw new Error('Credenciais inválidas');
+      if (!res.ok) {
+        // CORRIGIDO: Tratar erro diretamente
+        setError('Email ou password incorretos.');
+        setLoading(false);
+        return;
+      }
 
       const data = await res.json();
       login(data.access_token);
     } catch (err) {
-      setError('Email ou password incorretos.');
+      console.error(err);
+      setError('Ocorreu um erro de conexão.');
       setLoading(false);
     }
   };
