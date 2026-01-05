@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { API_URL } from '@/services/api'; // IMPORTADO
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,8 +18,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // ATUALIZADO: Endpoint mudou de /login para /auth/token
-      const res = await fetch('http://127.0.0.1:8000/auth/token', {
+      // ATUALIZADO: Usar API_URL
+      const res = await fetch(`${API_URL}/auth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ username: email, password }),

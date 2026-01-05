@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query'; // IMPORTADO
+import { useQueryClient } from '@tanstack/react-query';
+import { API_URL } from '@/services/api'; // IMPORTADO
 
 // Definição de tipos para evitar erros de TypeScript
 interface Option {
@@ -48,9 +49,9 @@ export default function AddTransaction() {
 
         // Usar Promise.allSettled para que se um falhar, os outros carreguem
         const results = await Promise.all([
-          fetch('http://127.0.0.1:8000/lookups/transaction-types', { headers }).then(r => r.json()),
-          fetch('http://127.0.0.1:8000/accounts', { headers }).then(r => r.json()),
-          fetch('http://127.0.0.1:8000/categories', { headers }).then(r => r.json())
+          fetch(`${API_URL}/lookups/transaction-types`, { headers }).then(r => r.json()),
+          fetch(`${API_URL}/accounts`, { headers }).then(r => r.json()),
+          fetch(`${API_URL}/categories`, { headers }).then(r => r.json())
         ]);
 
         const [typesData, accountsData, catsData] = results;
@@ -126,7 +127,7 @@ export default function AddTransaction() {
     }
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/transactions/', {
+      const res = await fetch(`${API_URL}/transactions/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
