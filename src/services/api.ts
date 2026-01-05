@@ -1,8 +1,16 @@
 import axios from 'axios';
 import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse } from '../types/models';
 
-// Ajusta a URL se o teu backend estiver noutro sítio
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+// Lógica para Runtime Environment Variables (Docker/TrueNAS)
+// Tenta ler de window.__ENV__ (injetado no browser), depois process.env (build time), depois fallback
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_API_URL) {
+    return (window as any).__ENV__.NEXT_PUBLIC_API_URL;
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+};
+
+export const API_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -13,6 +21,9 @@ const api = axios.create({
 
 // Interceptor Mágico: Injeta o token antes de cada pedido sair
 api.interceptors.request.use((config) => {
+  // Atualizar baseURL em tempo de execução caso mude (ex: navegação client-side)
+  config.baseURL = getBaseUrl();
+
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {

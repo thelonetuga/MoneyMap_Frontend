@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script"; // IMPORTADO
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import BottomNav from "../components/BottomNav";
@@ -33,6 +34,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt" suppressHydrationWarning>
+      <head>
+        {/* Carregar variáveis de ambiente em tempo de execução */}
+        <Script src="/env-config.js" strategy="beforeInteractive" />
+      </head>
       <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased bg-secondary dark:bg-primary text-darkText dark:text-lightText transition-colors duration-300`}>
         <ReactQueryProvider>
           <AuthProvider>

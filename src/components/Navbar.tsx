@@ -117,19 +117,7 @@ export default function Navbar() {
             <div className="h-6 w-px bg-secondary dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-secondary dark:border-gray-700 bg-secondary dark:bg-gray-800 relative">
-                {user?.profile?.avatar_url ? (
-                  <img
-                    src={`http://127.0.0.1:8000${user.profile.avatar_url}`}
-                    alt="Avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center w-full h-full text-muted">
-                    👤
-                  </div>
-                )}
-              </div>
+              {/* AVATAR REMOVIDO */}
 
               <div className="text-right hidden sm:flex flex-col items-end justify-center">
                 <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
