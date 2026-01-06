@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getAdminUsers, updateUserRole, getAdminStats } from '@/services/api';
+import { getAdminUsers, updateUserRole, getAdminStats, updateUserStatus, deleteUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
@@ -33,7 +33,7 @@ export default function AdminPage() {
   });
 
   // Mutation para mudar role
-  const mutation = useMutation({
+  const roleMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: string }) => updateUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -41,6 +41,31 @@ export default function AdminPage() {
     },
     onError: () => alert('Erro ao atualizar role.'),
   });
+
+  // Mutation para mudar status (Bloquear/Desbloquear)
+  const statusMutation = useMutation({
+    mutationFn: ({ userId, isActive }: { userId: number; isActive: boolean }) => updateUserStatus(userId, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => alert('Erro ao atualizar estado.'),
+  });
+
+  // Mutation para apagar utilizador
+  const deleteMutation = useMutation({
+    mutationFn: (userId: number) => deleteUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      alert('Utilizador apagado com sucesso.');
+    },
+    onError: () => alert('Erro ao apagar utilizador.'),
+  });
+
+  const handleDelete = (id: number) => {
+    if (confirm('Tem a certeza que deseja apagar este utilizador? Esta ação é irreversível.')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   if (authLoading || (usersLoading && !usersData)) {
     return <div className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">A carregar painel de admin... 🛡️</div>;
@@ -76,7 +101,8 @@ export default function AdminPage() {
                 <tr>
                   <th className="px-6 py-3">ID</th>
                   <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Role Atual</th>
+                  <th className="px-6 py-3">Role</th>
+                  <th className="px-6 py-3">Estado</th>
                   <th className="px-6 py-3">Ações</th>
                 </tr>
               </thead>
@@ -86,23 +112,36 @@ export default function AdminPage() {
                     <td className="px-6 py-4 font-mono tabular-nums">{u.id}</td>
                     <td className="px-6 py-4 font-medium text-darkText dark:text-lightText">{u.email}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                        u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                        u.role === 'premium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
                       <select
                         value={u.role}
-                        onChange={(e) => mutation.mutate({ userId: u.id, role: e.target.value })}
-                        className="bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-darkText dark:text-lightText text-sm rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
+                        onChange={(e) => roleMutation.mutate({ userId: u.id, role: e.target.value })}
+                        className="bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-darkText dark:text-lightText text-xs rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
                       >
                         <option value="basic">Básico</option>
                         <option value="premium">Premium</option>
                         <option value="admin">Admin</option>
                       </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => statusMutation.mutate({ userId: u.id, isActive: !u.is_active })}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                          u.is_active 
+                            ? 'bg-success/10 text-success hover:bg-success/20' 
+                            : 'bg-error/10 text-error hover:bg-error/20'
+                        }`}
+                      >
+                        {u.is_active ? 'Ativo' : 'Bloqueado'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button 
+                        onClick={() => handleDelete(u.id)}
+                        className="text-muted hover:text-error transition-colors p-1"
+                        title="Apagar Utilizador"
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))}

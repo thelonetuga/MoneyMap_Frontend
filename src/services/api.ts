@@ -2,7 +2,6 @@ import axios from 'axios';
 import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse } from '../types/models';
 
 // Lógica para Runtime Environment Variables (Docker/TrueNAS)
-// Tenta ler de window.__ENV__ (injetado no browser), depois process.env (build time), depois fallback
 const getBaseUrl = () => {
   if (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_API_URL) {
     return (window as any).__ENV__.NEXT_PUBLIC_API_URL;
@@ -11,7 +10,6 @@ const getBaseUrl = () => {
 };
 
 export const API_URL = getBaseUrl();
-
 
 const api = axios.create({
   baseURL: API_URL,
@@ -22,9 +20,7 @@ const api = axios.create({
 
 // Interceptor Mágico: Injeta o token antes de cada pedido sair
 api.interceptors.request.use((config) => {
-  // Atualizar baseURL em tempo de execução caso mude (ex: navegação client-side)
   config.baseURL = getBaseUrl();
-
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {
@@ -74,30 +70,22 @@ export const getPortfolio = async (): Promise<PortfolioResponse> => {
   return response.data as PortfolioResponse;
 };
 
-// REMOVIDO: updateAssetPrices (Automático)
-// NOVO: Atualização Manual
 export const updateManualPrice = async (symbol: string, price: number): Promise<void> => {
   await api.post('/portfolio/price/', { symbol, price });
 };
 
 export const getHistory = async (range: string = '30d'): Promise<HistoryPoint[]> => {
-  const response = await api.get('/analytics/history/', {
-    params: { range }
-  });
+  const response = await api.get('/analytics/history/', { params: { range } });
   return response.data as HistoryPoint[];
 };
 
 export const getSpending = async (range: string = '30d'): Promise<SpendingItem[]> => {
-  const response = await api.get('/analytics/spending/', {
-    params: { range }
-  });
+  const response = await api.get('/analytics/spending/', { params: { range } });
   return response.data as SpendingItem[];
 };
 
 export const getEvolution = async (period: string = 'year', time_range: string = 'all'): Promise<EvolutionPoint[]> => {
-  const response = await api.get('/analytics/evolution/', {
-    params: { period, time_range }
-  });
+  const response = await api.get('/analytics/evolution/', { params: { period, time_range } });
   return response.data as EvolutionPoint[];
 };
 
@@ -143,7 +131,7 @@ export interface Rule {
   id: number;
   pattern: string;
   category_id: number;
-  category_name?: string; // Opcional para display
+  category_name?: string;
 }
 
 export const getRules = async (): Promise<Rule[]> => {
@@ -169,6 +157,16 @@ export const getAdminUsers = async (page: number = 1): Promise<PaginatedResponse
 
 export const updateUserRole = async (userId: number, role: string): Promise<void> => {
   await api.patch(`/admin/users/${userId}/role/`, { role });
+};
+
+// NOVO: Atualizar Status (Bloquear/Desbloquear)
+export const updateUserStatus = async (userId: number, isActive: boolean): Promise<void> => {
+  await api.patch(`/admin/users/${userId}/status/`, { is_active: isActive });
+};
+
+// NOVO: Apagar Utilizador
+export const deleteUser = async (userId: number): Promise<void> => {
+  await api.delete(`/admin/users/${userId}/`);
 };
 
 export const getAdminStats = async (): Promise<{ total_users: number; total_transactions: number }> => {

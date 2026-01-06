@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import api from '@/services/api'; // Usar Axios
+import api from '@/services/api';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
+    currency: 'EUR',
     password: '',
     confirmPassword: ''
   });
@@ -20,6 +23,14 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
+    // Validação de Password
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('A password deve ter pelo menos 8 caracteres, 1 maiúscula e 1 número.');
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('As passwords não coincidem.');
       setLoading(false);
@@ -27,20 +38,31 @@ export default function RegisterPage() {
     }
 
     try {
-      await api.post('/users/', { 
-        email: formData.email, 
-        password: formData.password 
-      });
+      // Payload estruturado com Profile
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        profile: {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          preferred_currency: formData.currency
+        }
+      };
+
+      await api.post('/users/', payload);
 
       // Sucesso: Redirecionar para login
       router.push('/login');
     } catch (err: any) {
       console.error(err);
-      // Tentar extrair mensagem de erro do backend
       const msg = err.response?.data?.detail || 'Ocorreu um erro de conexão.';
       setError(msg);
       setLoading(false);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
@@ -48,7 +70,7 @@ export default function RegisterPage() {
       <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-heading font-bold text-accent mb-2">Junta-te ao MoneyMap</h1>
-          <p className="text-muted">Começa a controlar o teu futuro hoje.</p>
+          <p className="text-muted">Cria a tua conta personalizada.</p>
         </div>
 
         {error && (
@@ -57,41 +79,82 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* NOME COMPLETO */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Nome</label>
+              <input 
+                name="firstName" required
+                value={formData.firstName} onChange={handleChange}
+                className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
+                placeholder="João"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Apelido</label>
+              <input 
+                name="lastName" required
+                value={formData.lastName} onChange={handleChange}
+                className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
+                placeholder="Silva"
+              />
+            </div>
+          </div>
+
+          {/* EMAIL */}
           <div>
             <label className="block text-xs font-bold text-muted uppercase mb-1">Email</label>
             <input 
-              type="email" 
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              name="email" type="email" required
+              value={formData.email} onChange={handleChange}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
               placeholder="seu@email.com"
             />
           </div>
 
+          {/* MOEDA */}
+          <div>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Moeda Principal</label>
+            <select 
+              name="currency" 
+              value={formData.currency} onChange={handleChange}
+              className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
+            >
+              <option value="EUR">Euro (€)</option>
+              <option value="USD">Dólar ($)</option>
+              <option value="GBP">Libra (£)</option>
+            </select>
+          </div>
+
+          {/* PASSWORD */}
           <div>
             <label className="block text-xs font-bold text-muted uppercase mb-1">Password</label>
             <input 
-              type="password" 
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              name="password" type="password" required
+              value={formData.password} onChange={handleChange}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="••••••••"
+              placeholder="Mín. 8 chars, 1 Maiúscula, 1 Número"
             />
           </div>
 
+          {/* CONFIRMAR PASSWORD */}
           <div>
             <label className="block text-xs font-bold text-muted uppercase mb-1">Confirmar Password</label>
             <input 
-              type="password" 
-              required
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-              className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="••••••••"
+              name="confirmPassword" type="password" required
+              value={formData.confirmPassword} onChange={handleChange}
+              className={`w-full p-3 bg-secondary dark:bg-gray-900 border rounded-xl outline-none focus:ring-2 transition-all text-darkText dark:text-lightText ${
+                formData.confirmPassword && formData.password !== formData.confirmPassword 
+                  ? 'border-error focus:ring-error' 
+                  : 'border-gray-200 dark:border-gray-600 focus:ring-accent'
+              }`}
+              placeholder="Repetir password"
             />
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p className="text-xs text-error mt-1">As passwords não coincidem.</p>
+            )}
           </div>
 
           <button 
