@@ -9,7 +9,9 @@ import {
 } from 'recharts';
 import { getPortfolio, getHistory, getSpending, updateManualPrice } from '@/services/api'; 
 import EvolutionChart from '../components/EvolutionChart';
+import SmartShoppingWidget from '../components/SmartShoppingWidget'; // IMPORTADO
 import { PortfolioPosition } from '@/types/models'; 
+import { useAuth } from '@/context/AuthContext'; // IMPORTADO
 
 // Cores: Investimentos (Azuis) vs Despesas (Laranjas/Vermelhos)
 const COLORS_INVEST = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -17,6 +19,7 @@ const COLORS_SPEND = ['#FF8042', '#FFBB28', '#FF6B6B', '#D94848', '#993333'];
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth(); // Obter user para verificar permissões
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('30d');
   
@@ -129,6 +132,8 @@ export default function Home() {
       default: return 'Período';
     }
   };
+
+  const canViewSmartShopping = user?.role === 'admin' || user?.role === 'premium';
 
   return (
     <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
@@ -267,7 +272,14 @@ export default function Home() {
           <EvolutionChart />
         </div>
 
-        {/* 4. LINHA INFERIOR (Investimentos + Tabela) */}
+        {/* 4. NOVO: WIDGET SMART SHOPPING (Premium/Admin) */}
+        {canViewSmartShopping && (
+          <div className="mb-8">
+            <SmartShoppingWidget />
+          </div>
+        )}
+
+        {/* 5. LINHA INFERIOR (Investimentos + Tabela) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* GRÁFICO INVESTIMENTOS */}

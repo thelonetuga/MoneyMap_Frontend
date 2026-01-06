@@ -56,7 +56,7 @@ export interface UserResponse extends UserBase {
   id: number;
   created_at: string; // datetime
   role: string;
-  is_active: boolean; // NOVO: Campo de estado
+  is_active: boolean;
   profile?: UserProfileResponse | null;
 }
 
@@ -138,10 +138,11 @@ export interface TransactionBase {
   description: string;
   amount: number;
   
-  // Campos de Investimento (Opcionais)
+  // Campos de Investimento e Smart Shopping
   quantity?: number | null;
   price_per_unit?: number | null;
   symbol?: string | null;
+  measurement_unit?: string | null; // NOVO: kg, l, un
 }
 
 export interface TransactionCreate extends TransactionBase {
@@ -229,4 +230,22 @@ export interface TransactionQueryParams {
   transaction_type_id?: number;
   start_date?: string;
   end_date?: string;
+}
+
+// --- 10. SMART SHOPPING ---
+export interface SmartShoppingAnalysis {
+  avg_price_per_unit: number;
+  savings: number;
+  history_count: number;
+}
+
+export interface SmartShoppingItem {
+  item_name: string;
+  total_savings: number; // Pode ser negativo se gastou mais
+  purchase_count: number;
+}
+
+export interface SmartShoppingSummary {
+  total_savings: number;
+  items: SmartShoppingItem[];
 }

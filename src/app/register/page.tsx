@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import api from '@/services/api';
+import api, { loginUser } from '@/services/api'; // Importar loginUser
+import { useAuth } from '@/context/AuthContext'; // Importar useAuth
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth(); // Hook de autenticação
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -38,7 +40,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // Payload estruturado com Profile
+      // 1. Criar Utilizador
       const payload = {
         email: formData.email,
         password: formData.password,
@@ -51,11 +53,17 @@ export default function RegisterPage() {
 
       await api.post('/users/', payload);
 
-      // Sucesso: Redirecionar para login
-      router.push('/login');
+      // 2. Fazer Login Automático
+      const loginData = await loginUser(formData.email, formData.password);
+      
+      // 3. Guardar Token e Redirecionar
+      login(loginData.access_token);
+      // O redirecionamento é tratado dentro do login() ou pelo AuthContext, mas por segurança:
+      router.push('/');
+
     } catch (err: any) {
       console.error(err);
-      const msg = err.response?.data?.detail || 'Ocorreu um erro de conexão.';
+      const msg = err.response?.data?.detail || 'Ocorreu um erro ao criar conta.';
       setError(msg);
       setLoading(false);
     }

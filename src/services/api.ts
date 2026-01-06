@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse } from '../types/models';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary } from '../types/models';
 
 // Lógica para Runtime Environment Variables (Docker/TrueNAS)
 const getBaseUrl = () => {
@@ -89,6 +89,24 @@ export const getEvolution = async (period: string = 'year', time_range: string =
   return response.data as EvolutionPoint[];
 };
 
+// --- SMART SHOPPING ---
+export const getSmartShoppingAnalysis = async (itemName: string, currentPrice: number, unit: string): Promise<SmartShoppingAnalysis> => {
+  const response = await api.get('/analytics/smart-shopping/', {
+    params: {
+      item_name: itemName,
+      current_price: currentPrice,
+      unit: unit
+    }
+  });
+  return response.data as SmartShoppingAnalysis;
+};
+
+// NOVO: Resumo de Poupança
+export const getSmartShoppingSummary = async (period: 'month' | 'year' = 'month'): Promise<SmartShoppingSummary> => {
+  const response = await api.get('/analytics/smart-shopping/summary/', { params: { period } });
+  return response.data as SmartShoppingSummary;
+};
+
 // --- SERVIÇOS DE TRANSAÇÕES ---
 
 export const getTransactions = async (params?: TransactionQueryParams): Promise<PaginatedResponse<TransactionResponse>> => {
@@ -159,12 +177,10 @@ export const updateUserRole = async (userId: number, role: string): Promise<void
   await api.patch(`/admin/users/${userId}/role/`, { role });
 };
 
-// NOVO: Atualizar Status (Bloquear/Desbloquear)
 export const updateUserStatus = async (userId: number, isActive: boolean): Promise<void> => {
   await api.patch(`/admin/users/${userId}/status/`, { is_active: isActive });
 };
 
-// NOVO: Apagar Utilizador
 export const deleteUser = async (userId: number): Promise<void> => {
   await api.delete(`/admin/users/${userId}/`);
 };

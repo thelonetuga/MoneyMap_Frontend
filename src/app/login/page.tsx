@@ -24,9 +24,22 @@ export default function LoginPage() {
       });
 
       login(res.data.access_token);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Email ou password incorretos.');
+      
+      // Tratamento de erros específico
+      if (err.response) {
+        if (err.response.status === 403) {
+          setError('A sua conta foi bloqueada. Por favor contacte o suporte.');
+        } else if (err.response.status === 401) {
+          setError('Email ou password incorretos.');
+        } else {
+          setError(err.response.data?.detail || 'Ocorreu um erro ao tentar entrar.');
+        }
+      } else {
+        setError('Erro de conexão. Verifique a sua internet.');
+      }
+      
       setLoading(false);
     }
   };
@@ -40,7 +53,11 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg text-center font-medium">
+          <div className={`mb-4 p-3 border text-sm rounded-lg text-center font-medium ${
+            error.includes('bloqueada') 
+              ? 'bg-red-100 border-red-200 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+              : 'bg-error/10 border-error/20 text-error'
+          }`}>
             {error}
           </div>
         )}

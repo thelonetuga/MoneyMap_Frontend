@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import api from '@/services/api'; // Usar Axios
+import api, { getSmartShoppingAnalysis } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
+import { SmartShoppingAnalysis } from '@/types/models';
 
-// Definição de tipos para evitar erros de TypeScript
 interface Option {
   id: number;
   name: string;
@@ -14,15 +15,16 @@ interface Option {
 export default function AddTransaction() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Estados para dropdowns
+  // Dropdowns
   const [types, setTypes] = useState<Option[]>([]);
   const [accounts, setAccounts] = useState<Option[]>([]);
   const [categories, setCategories] = useState<Option[]>([]);
 
-  // Estado do formulário
+  // Form
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -32,64 +34,82 @@ export default function AddTransaction() {
     category_id: '', 
     // Campos de Investimento
     symbol: '',
+    // Campos Smart Shopping
     quantity: '',
+    measurement_unit: 'un',
     price_per_unit: ''
   });
 
-  // 1. CARREGAR DADOS (Usando Axios)
+  // Smart Shopping State
+  const [analysis, setAnalysis] = useState<SmartShoppingAnalysis | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  // Carregar dados
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Axios já trata do token e da URL base
         const [typesRes, accountsRes, catsRes] = await Promise.all([
-          api.get('/lookups/transaction-types'),
-          api.get('/accounts'),
-          api.get('/categories')
+          api.get('/lookups/transaction-types/'),
+          api.get('/accounts/'),
+          api.get('/categories/')
         ]);
 
-        const typesData = typesRes.data;
-        const accountsData = accountsRes.data;
-        const catsData = catsRes.data;
+        setTypes(typesRes.data);
+        setAccounts(accountsRes.data);
+        setCategories(catsRes.data);
 
-        if (Array.isArray(typesData)) {
-          setTypes(typesData);
-          if (typesData.length > 0) setFormData(prev => ({ ...prev, transaction_type_id: String(typesData[0].id) }));
-        }
-
-        if (Array.isArray(accountsData)) {
-          setAccounts(accountsData);
-          if (accountsData.length > 0) setFormData(prev => ({ ...prev, account_id: String(accountsData[0].id) }));
-        }
-
-        if (Array.isArray(catsData)) {
-          setCategories(catsData);
-        }
+        if (typesRes.data.length > 0) setFormData(prev => ({ ...prev, transaction_type_id: String(typesRes.data[0].id) }));
+        if (accountsRes.data.length > 0) setFormData(prev => ({ ...prev, account_id: String(accountsRes.data[0].id) }));
 
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
         setError("Não foi possível carregar os dados. Verifica a conexão.");
       }
     };
-
     fetchData();
   }, []);
 
-  // 2. DETEÇÃO DE INVESTIMENTO
-  const selectedType = Array.isArray(types) 
-    ? types.find(t => t.id === Number(formData.transaction_type_id)) 
-    : undefined;
-
+  // Lógica de UI (CORRIGIDA)
+  const selectedType = types.find(t => t.id === Number(formData.transaction_type_id));
+  
+  // Detetar Investimento (Compra, Venda, Buy, Sell, Investimento)
   const isInvestment = selectedType 
     ? ['compra', 'buy', 'venda', 'sell', 'investimento'].some(k => selectedType.name.toLowerCase().includes(k)) 
     : false;
 
-  // 3. SUBMETER FORMULÁRIO
+  // Detetar Despesa (para Smart Shopping)
+  const isExpense = selectedType 
+    ? ['despesa', 'expense', 'gasto', 'pagamento'].some(k => selectedType.name.toLowerCase().includes(k))
+    : false;
+
+  const canUseSmartShopping = (user?.role === 'admin' || user?.role === 'premium') && isExpense;
+
+  // Handler para Análise Smart Shopping
+  const handleAnalysis = async () => {
+    if (!formData.description || !formData.amount || !formData.quantity) {
+      setError('Preenche a Descrição, Valor e Quantidade para analisar.');
+      return;
+    }
+    setAnalysisLoading(true);
+    setAnalysis(null);
+    setError('');
+    
+    try {
+      const unitPrice = Math.abs(Number(formData.amount)) / Number(formData.quantity);
+      const data = await getSmartShoppingAnalysis(formData.description, unitPrice, formData.measurement_unit);
+      setAnalysis(data);
+    } catch (err) {
+      setError('Não foi possível analisar o preço.');
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  // Handler do Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    // Converter valores numéricos
     const payload: any = {
       description: formData.description,
       amount: Number(formData.amount),
@@ -99,34 +119,28 @@ export default function AddTransaction() {
     };
 
     if (formData.category_id) payload.category_id = Number(formData.category_id);
-
-    // Validação específica de Investimento
+    
     if (isInvestment) {
       if (!formData.symbol || !formData.quantity) {
-        setError('Para investimentos, tens de preencher o Símbolo (Ticker) e a Quantidade.');
+        setError('Para investimentos, preenche o Símbolo e a Quantidade.');
         setLoading(false);
         return;
       }
       payload.symbol = String(formData.symbol).toUpperCase(); 
       payload.quantity = Number(formData.quantity);
       if (formData.price_per_unit) payload.price_per_unit = Number(formData.price_per_unit);
+    } else if (canUseSmartShopping && formData.quantity) {
+      payload.quantity = Number(formData.quantity);
+      payload.measurement_unit = formData.measurement_unit;
     }
 
     try {
       await api.post('/transactions/', payload);
-
-      // SUCESSO: Invalidar cache
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
-      await queryClient.invalidateQueries({ queryKey: ['history'] });
-      await queryClient.invalidateQueries({ queryKey: ['spending'] });
       await queryClient.invalidateQueries({ queryKey: ['evolution'] });
-
       router.push('/');
-      
     } catch (err: any) {
-      console.error("Erro no submit:", err);
-      const msg = err.response?.data?.detail || "Ocorreu um erro desconhecido.";
-      setError(msg);
+      setError(err.response?.data?.detail || "Ocorreu um erro.");
       setLoading(false);
     }
   };
@@ -136,148 +150,105 @@ export default function AddTransaction() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 flex items-center justify-center transition-colors duration-200">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg max-w-lg w-full border border-gray-100 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+    <main className="min-h-screen bg-secondary dark:bg-primary p-6 flex items-center justify-center transition-colors duration-300">
+      <div className="bg-white dark:bg-primary p-8 rounded-xl shadow-soft max-w-lg w-full border border-secondary dark:border-gray-800">
+        <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-6 flex items-center gap-2">
           💸 Nova Transação
         </h1>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg font-medium">
+          <div className="mb-4 p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg font-medium">
             ⚠️ {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* DESCRIÇÃO E VALOR */}
+          {/* ... (Campos existentes: Descrição, Valor, Tipo, Data, Conta, Categoria) ... */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
-              <input 
-                name="description" required
-                value={formData.description} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
-                placeholder="Ex: Café"
-              />
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Descrição</label>
+              <input name="description" required value={formData.description} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent" placeholder="Ex: Café" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor (€)</label>
-              <input 
-                name="amount" type="number" step="0.01" required
-                value={formData.amount} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none font-mono"
-                placeholder="0.00"
-              />
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Valor (€)</label>
+              <input name="amount" type="number" step="0.01" required value={formData.amount} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent font-mono" placeholder="0.00" />
             </div>
           </div>
-
-          {/* TIPO E DATA */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tipo</label>
-              <select 
-                name="transaction_type_id" 
-                value={formData.transaction_type_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
-              >
-                {types.length === 0 && <option value="">A carregar...</option>}
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Tipo</label>
+              <select name="transaction_type_id" value={formData.transaction_type_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
                 {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Data</label>
-              <input 
-                name="date" type="date" required
-                max={new Date().toISOString().split('T')[0]} // BLOQUEIO DE DATA FUTURA
-                value={formData.date} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
-              />
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Data</label>
+              <input name="date" type="date" required max={new Date().toISOString().split('T')[0]} value={formData.date} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent" />
             </div>
           </div>
-
-          {/* CONTA E CATEGORIA */}
           <div className="grid grid-cols-2 gap-4">
              <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Conta</label>
-              <select 
-                name="account_id" 
-                value={formData.account_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
-              >
-                {accounts.length === 0 && <option value="">A carregar...</option>}
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Conta</label>
+              <select name="account_id" value={formData.account_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
                 {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
              <div>
-              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
-              <select 
-                name="category_id" // CORRIGIDO: Nome do campo
-                value={formData.category_id} onChange={handleChange}
-                className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none"
-              >
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Categoria</label>
+              <select name="category_id" value={formData.category_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
                 <option value="">-- Nenhuma --</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* CAMPOS DE INVESTIMENTO (Só aparecem se for Compra/Venda) */}
-          {isInvestment && (
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-              <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                📈 Dados do Ativo
-              </h3>
+          {/* SMART SHOPPING (Premium/Admin) - Apenas para Despesas */}
+          {canUseSmartShopping && !isInvestment && (
+            <div className="mt-6 p-4 bg-accent/10 rounded-xl border border-accent/20 space-y-3">
+              <h3 className="text-sm font-heading font-bold text-accent flex items-center gap-2">🛒 Smart Shopping</h3>
               <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
-                  <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Ticker</label>
-                  <input 
-                    name="symbol" 
-                    value={formData.symbol} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm uppercase"
-                    placeholder="AAPL"
-                  />
+                <div>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantidade</label>
+                  <input name="quantity" type="number" step="any" value={formData.quantity} onChange={handleChange} className="w-full p-2 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm" placeholder="Ex: 2" />
                 </div>
-                <div className="col-span-1">
-                  <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Quantidade</label>
-                  <input 
-                    name="quantity" type="number" step="any"
-                    value={formData.quantity} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="0.0"
-                  />
+                <div>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unidade</label>
+                  <input name="measurement_unit" value={formData.measurement_unit} onChange={handleChange} className="w-full p-2 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm" placeholder="kg, l, un" />
                 </div>
-                <div className="col-span-1">
-                   <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Preço/Un. (Op)</label>
-                  <input 
-                    name="price_per_unit" type="number" step="0.01"
-                    value={formData.price_per_unit} onChange={handleChange}
-                    className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Auto"
-                  />
+                <div className="flex items-end">
+                  <button type="button" onClick={handleAnalysis} disabled={analysisLoading} className="w-full py-2 bg-accent text-primary font-bold rounded-lg text-sm hover:bg-accent/90 disabled:opacity-50">
+                    {analysisLoading ? '...' : 'Analisar'}
+                  </button>
                 </div>
               </div>
-              <p className="text-[10px] text-blue-400 dark:text-blue-500 mt-2 italic">
-                Deixa o "Preço/Un" vazio para calcular automaticamente (Total / Qtd).
-              </p>
+              {analysis && (
+                <div className={`text-sm font-medium p-2 rounded-lg text-center ${analysis.savings > 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+                  {analysis.savings > 0 
+                    ? `Ótimo! Poupaste ${analysis.savings.toFixed(2)}€/unidade face à média.`
+                    : `Atenção! Pagaste ${Math.abs(analysis.savings).toFixed(2)}€/unidade a mais que a média.`
+                  }
+                  <span className="text-xs opacity-70 ml-2">({analysis.history_count} compras)</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CAMPOS DE INVESTIMENTO */}
+          {isInvestment && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+              <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">📈 Dados do Ativo</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Ticker</label><input name="symbol" value={formData.symbol} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm uppercase" placeholder="AAPL" /></div>
+                <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Quantidade</label><input name="quantity" type="number" step="any" value={formData.quantity} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="0.0" /></div>
+                <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Preço/Un. (Op)</label><input name="price_per_unit" type="number" step="0.01" value={formData.price_per_unit} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="Auto" /></div>
+              </div>
             </div>
           )}
 
           <div className="pt-4 flex flex-col gap-3">
-            <button 
-              type="submit" disabled={loading}
-              className="w-full bg-gray-900 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md disabled:opacity-50"
-            >
-              {loading ? 'A processar...' : 'Confirmar'}
-            </button>
-
-             <button 
-              type="button"
-              onClick={() => router.back()}
-              className="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-medium py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              Cancelar
-            </button>
+            <button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-primary font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">{loading ? 'A processar...' : 'Confirmar'}</button>
+            <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancelar</button>
           </div>
 
         </form>
