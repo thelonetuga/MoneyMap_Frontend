@@ -56,6 +56,7 @@ export interface UserResponse extends UserBase {
   id: number;
   created_at: string; // datetime
   role: string;
+  is_active: boolean; // NOVO: Campo de estado
   profile?: UserProfileResponse | null;
 }
 
