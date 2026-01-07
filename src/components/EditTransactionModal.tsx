@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,31 +13,38 @@ interface ModalProps {
 }
 
 export default function EditTransactionModal({ isOpen, onClose, onSave, transactionIds, initialData }: ModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   
   // Form State
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [subCategoryId, setSubCategoryId] = useState('');
+  
+  // Smart Shopping State
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('');
 
   const isBulk = transactionIds.length > 1;
+  const canUseSmartShopping = user?.role === 'admin' || user?.role === 'premium';
 
-  // Carregar Categorias
+  // Carregar Categorias e Dados Iniciais
   useEffect(() => {
     if (isOpen) {
       api.get('/categories/').then(res => setCategories(res.data)).catch(console.error);
       
-      // Se for individual, preencher dados
       if (!isBulk && initialData) {
         setDescription(initialData.description);
         setCategoryId(initialData.category?.id || '');
-        setSubCategoryId(initialData.sub_category?.id || '');
+        // Preencher dados de Smart Shopping se existirem
+        setQuantity(initialData.quantity || '');
+        setUnit(initialData.measurement_unit || '');
       } else {
-        // Reset para bulk
+        // Reset para bulk ou novo
         setDescription('');
         setCategoryId('');
-        setSubCategoryId('');
+        setQuantity('');
+        setUnit('');
       }
     }
   }, [isOpen, isBulk, initialData]);
@@ -49,10 +57,15 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
       const payload: any = {};
       if (description) payload.description = description;
       if (categoryId) payload.category_id = Number(categoryId);
-      if (subCategoryId) payload.sub_category_id = Number(subCategoryId);
+      
+      // Adicionar campos Smart Shopping se preenchidos
+      if (canUseSmartShopping) {
+        if (quantity) payload.quantity = Number(quantity);
+        if (unit) payload.measurement_unit = unit;
+      }
 
       // Loop para atualizar todas as transações selecionadas
-      await Promise.all(transactionIds.map(id => api.patch(`/transactions/${id}`, payload)));
+      await Promise.all(transactionIds.map(id => api.patch(`/transactions/${id}/`, payload)));
       
       onSave();
       onClose();
@@ -100,6 +113,36 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
               ))}
             </select>
           </div>
+
+          {/* SMART SHOPPING (Apenas Premium/Admin) */}
+          {canUseSmartShopping && (
+            <div className="p-4 bg-accent/5 rounded-xl border border-accent/10">
+              <h3 className="text-xs font-bold text-accent uppercase mb-2 flex items-center gap-1">
+                🛒 Smart Shopping
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantidade</label>
+                  <input 
+                    type="number"
+                    value={quantity} 
+                    onChange={e => setQuantity(e.target.value)}
+                    className="w-full p-2 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-darkText dark:text-lightText"
+                    placeholder="Ex: 1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unidade</label>
+                  <input 
+                    value={unit} 
+                    onChange={e => setUnit(e.target.value)}
+                    className="w-full p-2 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-darkText dark:text-lightText"
+                    placeholder="kg, l, un"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-4">
             <button 
