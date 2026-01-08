@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, Rule } from '@/services/api';
-import { useAuth } from '@/context/AuthContext'; // Importar useAuth
+import { useAuth } from '@/context/AuthContext';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 // --- INTERFACES ---
 interface SubCategory {
@@ -24,7 +25,7 @@ interface Account {
 }
 
 export default function SettingsPage() {
-    const { user } = useAuth(); // Obter o utilizador do contexto
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'profile' | 'accounts' | 'categories' | 'rules' | 'data'>('accounts');
 
@@ -53,6 +54,14 @@ export default function SettingsPage() {
     const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
     const [importLoading, setImportLoading] = useState(false);
 
+    // Modal State
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        action: () => void;
+    }>({ isOpen: false, title: '', message: '', action: () => {} });
+
     const canAccessPremium = user?.role === 'admin' || user?.role === 'premium';
 
     useEffect(() => { loadAllData(); }, []);
@@ -61,7 +70,7 @@ export default function SettingsPage() {
         setLoading(true);
         try {
             const [userRes, accRes, catRes] = await Promise.all([
-                api.get('/users/me'),
+                api.get('/users/me/'),
                 api.get('/accounts/'),
                 api.get('/categories/')
             ]);
@@ -89,7 +98,7 @@ export default function SettingsPage() {
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.put('/users/me', { first_name: firstName, preferred_currency: currency });
+            await api.put('/users/me/', { first_name: firstName, preferred_currency: currency });
             alert('Perfil atualizado! ✅');
         } catch (err) { alert('Erro ao guardar perfil.'); }
     };
@@ -108,8 +117,16 @@ export default function SettingsPage() {
         } catch (err) { alert('Erro ao criar conta.'); }
     };
 
-    const handleDeleteAccount = async (id: number) => {
-        if (!confirm('Tem a certeza que deseja apagar esta conta? Todas as transações associadas serão perdidas.')) return;
+    const handleDeleteAccountClick = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Apagar Conta?',
+            message: 'Tem a certeza que deseja apagar esta conta? Todas as transações associadas serão perdidas.',
+            action: () => executeDeleteAccount(id)
+        });
+    };
+
+    const executeDeleteAccount = async (id: number) => {
         try {
             await deleteAccount(id);
             setAccounts(accounts.filter(acc => acc.id !== id));
@@ -132,7 +149,7 @@ export default function SettingsPage() {
     const handleCreateSubCategory = async (catId: number) => {
         if (!newSubName) return;
         try {
-            const res = await api.post('/categories/subcategories', { name: newSubName, category_id: catId });
+            const res = await api.post('/categories/subcategories/', { name: newSubName, category_id: catId });
             setCategories(categories.map(cat => {
                 if (cat.id === catId) {
                     return { ...cat, subcategories: [...(cat.subcategories || []), res.data] };
@@ -143,10 +160,18 @@ export default function SettingsPage() {
         } catch (err) { alert('Erro ao criar subcategoria.'); }
     };
 
-    const handleDeleteSubCategory = async (subId: number, catId: number) => {
-        if (!confirm('Apagar subcategoria?')) return;
+    const handleDeleteSubCategoryClick = (subId: number, catId: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Apagar Subcategoria?',
+            message: 'Tem a certeza que deseja apagar esta subcategoria?',
+            action: () => executeDeleteSubCategory(subId, catId)
+        });
+    };
+
+    const executeDeleteSubCategory = async (subId: number, catId: number) => {
         try {
-            await api.delete(`/categories/subcategories/${subId}`);
+            await api.delete(`/categories/subcategories/${subId}/`);
             setCategories(categories.map(cat => {
                 if (cat.id === catId) {
                     return { ...cat, subcategories: cat.subcategories.filter(s => s.id !== subId) };
@@ -156,10 +181,18 @@ export default function SettingsPage() {
         } catch (err) { alert('Não é possível apagar: esta subcategoria tem transações associadas.'); }
     };
 
-    const handleDeleteCategory = async (id: number) => {
-        if (!confirm('Apagar categoria?')) return;
+    const handleDeleteCategoryClick = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Apagar Categoria?',
+            message: 'Tem a certeza que deseja apagar esta categoria? Se tiver transações, a ação será bloqueada.',
+            action: () => executeDeleteCategory(id)
+        });
+    };
+
+    const executeDeleteCategory = async (id: number) => {
         try {
-            await api.delete(`/categories/${id}`); 
+            await api.delete(`/categories/${id}/`); 
             setCategories(categories.filter(c => c.id !== id));
         } catch (err) { alert('Erro: Verifique se a categoria tem transações.'); }
     };
@@ -170,7 +203,6 @@ export default function SettingsPage() {
         if (!newRulePattern || !newRuleCatId) return;
         try {
             const newRule = await createRule(newRulePattern, Number(newRuleCatId));
-            // Enriquecer com nome da categoria para display
             const catName = categories.find(c => c.id === Number(newRuleCatId))?.name;
             setRules([...rules, { ...newRule, category_name: catName }]);
             setNewRulePattern('');
@@ -178,7 +210,17 @@ export default function SettingsPage() {
         } catch (err) { alert('Erro ao criar regra.'); }
     };
 
-    const handleDeleteRule = async (id: number) => {
+    const handleDeleteRuleClick = (id: number) => {
+        // Regras são menos críticas, mas consistência é bom
+        setConfirmModal({
+            isOpen: true,
+            title: 'Apagar Regra?',
+            message: 'Tem a certeza que deseja apagar esta regra de automação?',
+            action: () => executeDeleteRule(id)
+        });
+    };
+
+    const executeDeleteRule = async (id: number) => {
         try {
             await deleteRule(id);
             setRules(rules.filter(r => r.id !== id));
@@ -188,20 +230,13 @@ export default function SettingsPage() {
     // --- IMPORT / EXPORT ---
     const handleDownloadTemplate = () => {
         const headers = "date,description,amount,category";
-        
-        // Gerar linhas de exemplo com categorias reais do utilizador
         let csvContent = "data:text/csv;charset=utf-8," + headers + "\n";
-        
-        // Adicionar exemplos genéricos
         csvContent += "2024-01-01,Exemplo Despesa,-10.50,Alimentação\n";
-        
-        // Adicionar exemplos com as categorias do utilizador (se existirem)
         if (categories.length > 0) {
             categories.slice(0, 5).forEach(cat => {
                 csvContent += `2024-01-01,Exemplo ${cat.name},-20.00,${cat.name}\n`;
             });
         }
-
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -222,7 +257,7 @@ export default function SettingsPage() {
         formData.append('file', importFile);
         
         try {
-            const res = await api.post(`/imports/upload?account_id=${importAccount}`, formData, {
+            const res = await api.post(`/imports/upload/?account_id=${importAccount}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setImportStatus({ type: 'success', msg: `Sucesso! ${res.data.added} transações importadas.` });
@@ -238,7 +273,8 @@ export default function SettingsPage() {
     const handleExport = async () => {
         try {
             const blob = await exportTransactions();
-            const url = window.URL.createObjectURL(blob);
+            // CORRIGIDO: Usar URL global em vez de window.URL
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `moneymap_export_${new Date().toISOString().split('T')[0]}.csv`;
@@ -256,6 +292,17 @@ export default function SettingsPage() {
 
     return (
         <main className="max-w-5xl mx-auto p-6">
+            
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmModal.action}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmText="Apagar"
+                isDanger={true}
+            />
+
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Centro de Controlo 🛠️</h1>
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                 <button onClick={() => setActiveTab('accounts')} className={tabClass('accounts')}>🏦 Contas</button>
@@ -274,7 +321,7 @@ export default function SettingsPage() {
                                 <div><p className="font-bold text-gray-800 dark:text-white">{acc.name}</p><p className="text-sm text-gray-500 dark:text-gray-400">{acc.account_type?.name}</p></div>
                                 <div className="flex items-center gap-4">
                                     <p className={`font-bold ${acc.current_balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{acc.current_balance.toFixed(2)} €</p>
-                                    <button onClick={() => handleDeleteAccount(acc.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Apagar Conta">🗑️</button>
+                                    <button onClick={() => handleDeleteAccountClick(acc.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Apagar Conta">🗑️</button>
                                 </div>
                             </div>
                         ))}
@@ -310,7 +357,7 @@ export default function SettingsPage() {
                                             {cat.subcategories?.map(sub => (
                                                 <div key={sub.id} className="flex items-center gap-1 px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 group">
                                                     {sub.name}
-                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteSubCategory(sub.id, cat.id); }} className="ml-1 text-gray-300 hover:text-red-500 font-bold px-1 rounded-full">×</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteSubCategoryClick(sub.id, cat.id); }} className="ml-1 text-gray-300 hover:text-red-500 font-bold px-1 rounded-full">×</button>
                                                 </div>
                                             ))}
                                         </div>
@@ -318,7 +365,7 @@ export default function SettingsPage() {
                                             <input placeholder="Nova sub..." value={newSubName} onChange={e => setNewSubName(e.target.value)} className={`flex-1 p-2 rounded-lg text-sm outline-none ${inputClass}`} />
                                             <button onClick={() => handleCreateSubCategory(cat.id)} className="px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm font-bold rounded-lg">+</button>
                                         </div>
-                                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-right"><button onClick={() => handleDeleteCategory(cat.id)} className="text-xs text-red-500 hover:underline">Apagar Categoria</button></div>
+                                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-right"><button onClick={() => handleDeleteCategoryClick(cat.id)} className="text-xs text-red-500 hover:underline">Apagar Categoria</button></div>
                                     </div>
                                 )}
                             </div>
@@ -348,7 +395,7 @@ export default function SettingsPage() {
                                     <span className="text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-lg">
                                         ➜ {rule.category_name || categories.find(c => c.id === rule.category_id)?.name || 'Categoria'}
                                     </span>
-                                    <button onClick={() => handleDeleteRule(rule.id)} className="text-gray-300 hover:text-red-500">×</button>
+                                    <button onClick={() => handleDeleteRuleClick(rule.id)} className="text-gray-300 hover:text-red-500">×</button>
                                 </div>
                             </div>
                         ))}

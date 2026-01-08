@@ -5,12 +5,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { getAdminUsers, updateUserRole, getAdminStats, updateUserStatus, deleteUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import ConfirmationModal from '@/components/ConfirmationModal'; // IMPORTADO
 
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+
+  // Estado para Modal de Confirmação
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   // Verificar se é admin
   useEffect(() => {
@@ -56,14 +61,19 @@ export default function AdminPage() {
     mutationFn: (userId: number) => deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      alert('Utilizador apagado com sucesso.');
+      // alert('Utilizador apagado com sucesso.'); // Opcional, o modal fecha
     },
     onError: () => alert('Erro ao apagar utilizador.'),
   });
 
-  const handleDelete = (id: number) => {
-    if (confirm('Tem a certeza que deseja apagar este utilizador? Esta ação é irreversível.')) {
-      deleteMutation.mutate(id);
+  const handleDeleteClick = (id: number) => {
+    setUserToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      deleteMutation.mutate(userToDelete);
     }
   };
 
@@ -75,6 +85,17 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
+      
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Apagar Utilizador?"
+        message="Esta ação é irreversível. Todas as contas, transações e dados deste utilizador serão apagados permanentemente."
+        confirmText="Sim, Apagar"
+        isDanger={true}
+      />
+
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">Painel de Administração 🛡️</h1>
 
@@ -136,7 +157,7 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <button 
-                        onClick={() => handleDelete(u.id)}
+                        onClick={() => handleDeleteClick(u.id)}
                         className="text-muted hover:text-error transition-colors p-1"
                         title="Apagar Utilizador"
                       >

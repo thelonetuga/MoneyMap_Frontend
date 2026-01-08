@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getTransactions } from '@/services/api';
-import { TransactionQueryParams, TransactionResponse } from '@/types/models';
+import { getTransactions } from '@/services/api'; // CORRIGIDO
+import { TransactionQueryParams, TransactionResponse } from '@/types/models'; // CORRIGIDO
 import api from '@/services/api';
 import EditTransactionModal from '@/components/EditTransactionModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -28,6 +29,14 @@ export default function TransactionsPage() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<TransactionResponse | null>(null);
+
+  // Estados de Confirmação (Modal)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    action: () => void;
+  }>({ isOpen: false, title: '', message: '', action: () => {} });
 
   // Verificar autenticação
   useEffect(() => {
@@ -81,16 +90,23 @@ export default function TransactionsPage() {
     }
   };
 
-  // Handlers de Ações
-  const handleBulkDelete = async () => {
-    if (!confirm(`Tem a certeza que deseja apagar ${selectedIds.length} transações?`)) return;
+  // Handlers de Ações (Com Modal)
+  const handleBulkDeleteClick = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Apagar Transações?',
+      message: `Tem a certeza que deseja apagar ${selectedIds.length} transações? Esta ação é irreversível.`,
+      action: executeBulkDelete
+    });
+  };
+
+  const executeBulkDelete = async () => {
     setIsBulkDeleting(true);
     try {
       await Promise.all(selectedIds.map(id => api.delete(`/transactions/${id}/`)));
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       setSelectedIds([]);
-      alert('Transações apagadas com sucesso!');
     } catch (err) {
       console.error(err);
       alert('Erro ao apagar algumas transações.');
@@ -99,8 +115,16 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleDeleteOne = async (id: number) => {
-    if (!confirm('Tem a certeza que deseja apagar esta transação?')) return;
+  const handleDeleteOneClick = (id: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Apagar Transação?',
+      message: 'Tem a certeza que deseja apagar esta transação?',
+      action: () => executeDeleteOne(id)
+    });
+  };
+
+  const executeDeleteOne = async (id: number) => {
     try {
       await api.delete(`/transactions/${id}/`);
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -147,6 +171,16 @@ export default function TransactionsPage() {
         initialData={editingTx}
       />
 
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Apagar"
+        isDanger={true}
+      />
+
       <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           
@@ -172,7 +206,7 @@ export default function TransactionsPage() {
                 <option value="amount_asc">Menor Valor</option>
               </select>
 
-              {/* BOTÃO NOVA TRANSAÇÃO (CORRIGIDO) */}
+              {/* BOTÃO NOVA TRANSAÇÃO */}
               <button 
                 onClick={() => router.push('/add')} 
                 className="bg-accent hover:bg-accent/90 text-primary font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-glow"
@@ -251,7 +285,7 @@ export default function TransactionsPage() {
               <span className="text-sm text-blue-800 dark:text-blue-200 font-medium ml-2">{selectedIds.length} selecionadas</span>
               <div className="flex gap-2">
                 <button onClick={openBulkEditModal} className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">✏️ Editar</button>
-                <button onClick={handleBulkDelete} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50">{isBulkDeleting ? 'A apagar...' : '🗑️ Apagar'}</button>
+                <button onClick={handleBulkDeleteClick} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50">{isBulkDeleting ? 'A apagar...' : '🗑️ Apagar'}</button>
                 <button onClick={() => setSelectedIds([])} className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Cancelar</button>
               </div>
             </div>
@@ -290,7 +324,7 @@ export default function TransactionsPage() {
                       <td className={`px-6 py-4 text-right font-bold ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
                       <td className="px-6 py-4 text-center flex justify-center gap-2">
                         <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1" title="Editar">✏️</button>
-                        <button onClick={() => handleDeleteOne(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Apagar">🗑️</button>
+                        <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Apagar">🗑️</button>
                       </td>
                     </tr>
                   ))}
