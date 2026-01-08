@@ -117,16 +117,16 @@ export default function Navbar() {
             <div className="h-6 w-px bg-secondary dark:bg-gray-700 mx-1 hidden sm:block"></div>
 
             <div className="flex items-center gap-3">
-              {/* AVATAR REMOVIDO */}
-
-              <div className="text-right hidden sm:flex flex-col items-end justify-center">
+              
+              {/* LINK PARA PERFIL (NOME E CARGO) */}
+              <Link href="/profile" className="text-right hidden sm:flex flex-col items-end justify-center hover:opacity-80 transition-opacity cursor-pointer">
                 <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
                   {loading ? "..." : user?.profile?.first_name || user?.email?.split('@')[0]}
                 </p>
-                <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role as string)}`}>
-                  {getRoleLabel(user?.role as string)}
+                <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role)}`}>
+                  {getRoleLabel(user?.role)}
                 </p>
-              </div>
+              </Link>
 
               <button
                 onClick={logout}

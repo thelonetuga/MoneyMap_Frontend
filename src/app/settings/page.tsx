@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, Rule } from '@/services/api';
+import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, updateAccountBalance, Rule } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import ConfirmationModal from '@/components/ConfirmationModal';
 
@@ -27,11 +27,9 @@ interface Account {
 export default function SettingsPage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'profile' | 'accounts' | 'categories' | 'rules' | 'data'>('accounts');
+    const [activeTab, setActiveTab] = useState<'accounts' | 'categories' | 'rules' | 'data'>('accounts');
 
     // Estados Globais
-    const [firstName, setFirstName] = useState('');
-    const [currency, setCurrency] = useState('EUR');
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [rules, setRules] = useState<Rule[]>([]);
@@ -43,6 +41,10 @@ export default function SettingsPage() {
     const [newCatName, setNewCatName] = useState('');
     const [newSubName, setNewSubName] = useState('');
     const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
+
+    // Estado de Edição de Saldo
+    const [editingBalanceId, setEditingBalanceId] = useState<number | null>(null);
+    const [editBalanceValue, setEditBalanceValue] = useState('');
 
     // Inputs Regras
     const [newRulePattern, setNewRulePattern] = useState('');
@@ -69,16 +71,11 @@ export default function SettingsPage() {
     const loadAllData = async () => {
         setLoading(true);
         try {
-            const [userRes, accRes, catRes] = await Promise.all([
-                api.get('/users/me/'),
+            const [accRes, catRes] = await Promise.all([
                 api.get('/accounts/'),
                 api.get('/categories/')
             ]);
 
-            if (userRes.data.profile) {
-                setFirstName(userRes.data.profile.first_name);
-                setCurrency(userRes.data.profile.preferred_currency);
-            }
             setAccounts(accRes.data);
             setCategories(catRes.data);
             if (accRes.data.length > 0) setImportAccount(String(accRes.data[0].id));
@@ -94,14 +91,6 @@ export default function SettingsPage() {
     }, [activeTab, canAccessPremium]);
 
     // --- HANDLERS ---
-
-    const handleSaveProfile = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await api.put('/users/me/', { first_name: firstName, preferred_currency: currency });
-            alert('Perfil atualizado! ✅');
-        } catch (err) { alert('Erro ao guardar perfil.'); }
-    };
 
     const handleCreateAccount = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,6 +122,32 @@ export default function SettingsPage() {
         } catch (err) { 
             console.error(err);
             alert('Erro ao apagar conta. Verifique se existem dependências.'); 
+        }
+    };
+
+    // Handler para iniciar edição de saldo
+    const startEditingBalance = (acc: Account) => {
+        setEditingBalanceId(acc.id);
+        setEditBalanceValue(String(acc.current_balance));
+    };
+
+    // Handler para salvar novo saldo
+    const saveNewBalance = async (id: number) => {
+        if (!editBalanceValue || isNaN(Number(editBalanceValue))) return;
+        
+        try {
+            await updateAccountBalance(id, Number(editBalanceValue));
+            
+            // Atualizar estado local
+            setAccounts(accounts.map(acc => 
+                acc.id === id ? { ...acc, current_balance: Number(editBalanceValue) } : acc
+            ));
+            
+            setEditingBalanceId(null);
+            alert('Saldo ajustado com sucesso! Foi criada uma transação de ajuste.');
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao atualizar saldo.');
         }
     };
 
@@ -211,7 +226,6 @@ export default function SettingsPage() {
     };
 
     const handleDeleteRuleClick = (id: number) => {
-        // Regras são menos críticas, mas consistência é bom
         setConfirmModal({
             isOpen: true,
             title: 'Apagar Regra?',
@@ -273,7 +287,6 @@ export default function SettingsPage() {
     const handleExport = async () => {
         try {
             const blob = await exportTransactions();
-            // CORRIGIDO: Usar URL global em vez de window.URL
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -309,7 +322,6 @@ export default function SettingsPage() {
                 <button onClick={() => setActiveTab('categories')} className={tabClass('categories')}>🏷️ Categorias</button>
                 {canAccessPremium && <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Regras</button>}
                 {canAccessPremium && <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Dados</button>}
-                <button onClick={() => setActiveTab('profile')} className={tabClass('profile')}>👤 Perfil</button>
             </div>
 
             {/* TAB CONTAS */}
@@ -320,7 +332,28 @@ export default function SettingsPage() {
                             <div key={acc.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
                                 <div><p className="font-bold text-gray-800 dark:text-white">{acc.name}</p><p className="text-sm text-gray-500 dark:text-gray-400">{acc.account_type?.name}</p></div>
                                 <div className="flex items-center gap-4">
-                                    <p className={`font-bold ${acc.current_balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{acc.current_balance.toFixed(2)} €</p>
+                                    
+                                    {/* EDIÇÃO DE SALDO */}
+                                    {editingBalanceId === acc.id ? (
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="number" 
+                                                step="0.01"
+                                                value={editBalanceValue}
+                                                onChange={(e) => setEditBalanceValue(e.target.value)}
+                                                className="w-24 p-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-700 text-darkText dark:text-lightText outline-none"
+                                                autoFocus
+                                            />
+                                            <button onClick={() => saveNewBalance(acc.id)} className="text-green-500 hover:text-green-600 font-bold">✓</button>
+                                            <button onClick={() => setEditingBalanceId(null)} className="text-red-500 hover:text-red-600 font-bold">✕</button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 group/balance cursor-pointer" onClick={() => startEditingBalance(acc)}>
+                                            <p className={`font-bold ${acc.current_balance < 0 ? 'text-red-500' : 'text-green-600'}`}>{acc.current_balance.toFixed(2)} €</p>
+                                            <span className="opacity-0 group-hover/balance:opacity-100 text-xs text-gray-400">✎</span>
+                                        </div>
+                                    )}
+
                                     <button onClick={() => handleDeleteAccountClick(acc.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Apagar Conta">🗑️</button>
                                 </div>
                             </div>
@@ -341,6 +374,7 @@ export default function SettingsPage() {
                 </div>
             )}
 
+            {/* ... (Resto das tabs mantêm-se iguais) ... */}
             {/* TAB CATEGORIAS */}
             {activeTab === 'categories' && (
                 <div className="grid md:grid-cols-2 gap-8">
@@ -466,18 +500,6 @@ export default function SettingsPage() {
                             <span>Descarregar CSV</span>
                         </button>
                     </div>
-                </div>
-            )}
-
-            {/* TAB PERFIL */}
-            {activeTab === 'profile' && (
-                <div className="max-w-md mx-auto bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700">
-                     <h2 className="text-xl font-bold text-gray-700 dark:text-white mb-6">Editar Perfil</h2>
-                     <form onSubmit={handleSaveProfile} className="space-y-4">
-                        <input value={firstName} onChange={e => setFirstName(e.target.value)} className={inputClass} placeholder="Nome" />
-                        <select value={currency} onChange={e => setCurrency(e.target.value)} className={inputClass}><option value="EUR">Euro (€)</option><option value="USD">Dólar ($)</option></select>
-                        <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Guardar</button>
-                    </form>
                 </div>
             )}
         </main>

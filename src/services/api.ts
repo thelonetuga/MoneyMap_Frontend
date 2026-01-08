@@ -125,7 +125,6 @@ export const createTransaction = async (data: any): Promise<TransactionResponse>
   return response.data;
 };
 
-// NOVO: Transferência entre contas
 export const transferFunds = async (data: { source_account_id: number; destination_account_id: number; amount: number; date: string; description: string }): Promise<void> => {
   await api.post('/transactions/transfer/', data);
 };
@@ -139,6 +138,11 @@ export const exportTransactions = async (): Promise<Blob> => {
 export const getAccounts = async (): Promise<any[]> => {
   const response = await api.get('/accounts/');
   return response.data;
+};
+
+// NOVO: Atualizar Saldo Manualmente
+export const updateAccountBalance = async (id: number, newBalance: number): Promise<void> => {
+  await api.patch(`/accounts/${id}/balance/`, { new_balance: newBalance });
 };
 
 export const getCategories = async (): Promise<any[]> => {
