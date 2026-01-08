@@ -1,51 +1,97 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
-  if (["/login", "/register"].includes(pathname)) return null;
+  if (['/login', '/register'].includes(pathname)) return null;
 
   const isActive = (path: string) => pathname === path;
 
+  const navItemClass = (active: boolean) => 
+    `flex flex-col items-center justify-center w-full h-full space-y-1 ${
+      active 
+        ? 'text-accent' 
+        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+    }`;
+
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-primary border-t border-secondary dark:border-gray-800 pb-safe z-50 transition-colors duration-300">
-      <div className="flex justify-around items-center h-16 px-2">
+    <div className="fixed bottom-0 left-0 z-50 w-full h-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 md:hidden pb-safe">
+      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         
         {/* DASHBOARD */}
-        <Link href="/" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-accent' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-            <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-            <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
-          </svg>
-          <span className="text-[10px] font-medium font-sans">Início</span>
+        <Link href="/" className={navItemClass(isActive('/'))}>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+          <span className="text-[10px]">Início</span>
         </Link>
 
         {/* TRANSAÇÕES */}
-        <Link href="/transactions" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/transactions') ? 'text-accent' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-            <path fillRule="evenodd" d="M2.625 6.75a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875 0A.75.75 0 018.25 6h12a.75.75 0 010 1.5h-12a.75.75 0 01-.75-.75zM2.625 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zM7.5 12a.75.75 0 01.75-.75h12a.75.75 0 010 1.5h-12A.75.75 0 017.5 12zm-4.875 5.25a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875 0a.75.75 0 01.75-.75h12a.75.75 0 010 1.5h-12a.75.75 0 01-.75-.75z" clipRule="evenodd" />
-          </svg>
-          <span className="text-[10px] font-medium font-sans">Extrato</span>
+        <Link href="/transactions" className={navItemClass(isActive('/transactions'))}>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+          <span className="text-[10px]">Extrato</span>
         </Link>
 
-        {/* ADICIONAR (FAB) */}
-        <div className="relative -top-5">
-          <Link href="/add" className="flex items-center justify-center w-14 h-14 bg-accent rounded-full text-primary shadow-glow hover:scale-105 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-              <path fillRule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
-            </svg>
+        {/* ADICIONAR (CENTRAL EM DESTAQUE) */}
+        <div className="flex items-center justify-center -mt-6">
+          <Link 
+            href="/add" 
+            className="flex items-center justify-center w-14 h-14 bg-accent text-primary rounded-full shadow-lg shadow-accent/30 hover:scale-105 transition-transform"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           </Link>
         </div>
 
-        {/* DEFINIÇÕES */}
-        <Link href="/settings" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/settings') ? 'text-accent' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-            <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.389c-.42.18-.813.411-1.18.682l-1.302-.64a1.875 1.875 0 00-2.273.72l-1.648 2.857a1.875 1.875 0 00.658 2.43l1.163.648a8.725 8.725 0 000 1.828l-1.163.648a1.875 1.875 0 00-.658 2.43l1.647 2.857c.484.835 1.528 1.117 2.273.72l1.302-.64c.367.27.76.501 1.18.682l.178 1.572A1.875 1.875 0 0011.077 21.75h1.846c.917 0 1.699-.663 1.85-1.567l.178-1.572c.42-.18.813-.411 1.18-.682l1.302.64a1.875 1.875 0 002.273-.72l1.648-2.857a1.875 1.875 0 00-.658-2.43l-1.163-.648a8.725 8.725 0 000-1.828l1.163-.648a1.875 1.875 0 00.658-2.43l-1.647-2.857a1.875 1.875 0 00-2.273-.72l-1.302.64c-.367-.27-.76-.501-1.18-.682l-.178-1.572a1.875 1.875 0 00-1.85-1.567h-1.846zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clipRule="evenodd" />
-          </svg>
-          <span className="text-[10px] font-medium font-sans">Definições</span>
+        {/* ADMIN (SE FOR ADMIN) OU DEFINIÇÕES */}
+        {user?.role === 'admin' ? (
+          <Link href="/admin" className={navItemClass(isActive('/admin'))}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <span className="text-[10px]">Admin</span>
+          </Link>
+        ) : (
+          // Se não for admin, mostra um placeholder ou outra coisa (ex: Stats)
+          // Por agora, duplicamos Settings ou deixamos vazio? 
+          // Melhor: Mostrar "Perfil" que vai para settings?
+          <Link href="/settings" className={navItemClass(isActive('/settings'))}>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+             <span className="text-[10px]">Ajustes</span>
+          </Link>
+        )}
+
+        {/* PERFIL / SAIR (Ou Settings se o anterior for Admin) */}
+        {/* Se o user for admin, o slot 4 é Admin. O slot 5 é Settings. */}
+        {/* Se o user NÃO for admin, o slot 4 é Settings. O slot 5 pode ser Logout? */}
+        {/* Vamos simplificar: Slot 5 é sempre Settings/Perfil */}
+        
+        <Link href="/settings" className={navItemClass(isActive('/settings') && user?.role === 'admin')}>
+           {/* Se for admin, o link settings já está ativo no slot 5? Não, slot 4 é admin. */}
+           {/* Se não for admin, slot 4 é settings. Slot 5 é duplicado? */}
+           {/* Vamos fazer: 1:Home, 2:Transações, 3:Add, 4:Admin(ou vazio), 5:Settings */}
+           
+           {user?.role !== 'admin' ? (
+             // Se não é admin, o slot 4 já é settings. O que pomos aqui?
+             // Talvez nada, ou um botão de Sair?
+             // Vamos pôr "Perfil" que vai para a tab de perfil
+             <div className="flex flex-col items-center justify-center w-full h-full space-y-1 text-gray-400">
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-300 dark:border-gray-600">
+                  {user?.profile?.avatar_url ? (
+                    <img src={`http://127.0.0.1:8000${user.profile.avatar_url}`} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px]">👤</div>
+                  )}
+                </div>
+                <span className="text-[10px]">Perfil</span>
+             </div>
+           ) : (
+             // Se é admin, slot 4 é admin, slot 5 é settings
+             <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span className="text-[10px]">Ajustes</span>
+             </>
+           )}
         </Link>
 
       </div>
