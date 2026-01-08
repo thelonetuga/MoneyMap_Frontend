@@ -127,8 +127,8 @@ export default function SmartShoppingWidget() {
       </div>
 
       {/* PAGINAÇÃO */}
-      {/* CORRIGIDO: Adicionado optional chaining (data?.pages) */}
-      {data?.pages > 1 && (
+      {/* CORRIGIDO: Optional chaining em todos os acessos */}
+      {data && data.pages > 1 && (
         <div className="flex justify-between items-center mt-4 pt-4 border-t border-secondary dark:border-gray-700">
           <button 
             onClick={() => setPage(p => Math.max(1, p - 1))} 
@@ -137,10 +137,10 @@ export default function SmartShoppingWidget() {
           >
             ← Anterior
           </button>
-          <span className="text-xs text-muted">Página {data.page} de {data.pages}</span>
+          <span className="text-xs text-muted">Página {data?.page} de {data?.pages}</span>
           <button 
-            onClick={() => setPage(p => Math.min(data.pages, p + 1))} 
-            disabled={page === data.pages}
+            onClick={() => setPage(p => Math.min(data?.pages || 1, p + 1))} 
+            disabled={page === data?.pages}
             className="text-xs font-bold text-muted hover:text-darkText dark:hover:text-lightText disabled:opacity-50"
           >
             Próxima →
