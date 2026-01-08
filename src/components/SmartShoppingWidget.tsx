@@ -5,15 +5,20 @@ import { useQuery } from '@tanstack/react-query';
 import { getSmartShoppingSummary } from '@/services/api';
 
 export default function SmartShoppingWidget() {
-  // Adicionado 'all' às opções
-  const [period, setPeriod] = useState<'month' | 'year' | 'all'>('year');
+  const [period, setPeriod] = useState<'month' | 'year' | 'all'>('all');
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['smart-shopping-summary', period],
-    // O TypeScript pode reclamar se a função api esperar apenas month/year, mas o JS envia a string 'all'
-    queryFn: () => getSmartShoppingSummary(period as any),
+    queryKey: ['smart-shopping-summary', period, page],
+    queryFn: () => getSmartShoppingSummary(period, page, 5), // Size 5
     retry: false
   });
+
+  // Reset page when period changes
+  const handlePeriodChange = (newPeriod: 'month' | 'year' | 'all') => {
+    setPeriod(newPeriod);
+    setPage(1);
+  };
 
   // DEBUG
   useEffect(() => {
@@ -34,7 +39,7 @@ export default function SmartShoppingWidget() {
       <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col items-center justify-center h-64 text-center">
         <span className="text-4xl mb-2">⚠️</span>
         <h3 className="text-lg font-heading font-bold text-error">Erro ao carregar dados</h3>
-        <p className="text-sm text-muted mt-2">Verifica a tua conexão ou permissões.</p>
+        <p className="text-sm text-muted mt-2">Verifica a consola para mais detalhes.</p>
       </div>
     );
   }
@@ -60,7 +65,7 @@ export default function SmartShoppingWidget() {
         </p>
         <div className="mt-4 flex gap-2">
              <button 
-            onClick={() => setPeriod('all')}
+            onClick={() => handlePeriodChange('all')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === 'all' ? 'bg-accent text-primary shadow-sm' : 'bg-secondary dark:bg-gray-700 text-muted'}`}
           >
             Ver Tudo
@@ -78,19 +83,19 @@ export default function SmartShoppingWidget() {
         </h2>
         <div className="flex bg-secondary dark:bg-gray-800 p-1 rounded-lg">
           <button 
-            onClick={() => setPeriod('month')}
+            onClick={() => handlePeriodChange('month')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === 'month' ? 'bg-white dark:bg-gray-700 text-accent shadow-sm' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}
           >
             Mês
           </button>
           <button 
-            onClick={() => setPeriod('year')}
+            onClick={() => handlePeriodChange('year')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === 'year' ? 'bg-white dark:bg-gray-700 text-accent shadow-sm' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}
           >
             Ano
           </button>
           <button 
-            onClick={() => setPeriod('all')}
+            onClick={() => handlePeriodChange('all')}
             className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === 'all' ? 'bg-white dark:bg-gray-700 text-accent shadow-sm' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}
           >
             Tudo
@@ -106,8 +111,8 @@ export default function SmartShoppingWidget() {
         </div>
       </div>
 
-      {/* TOP ITEMS LIST */}
-      <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar max-h-60">
+      {/* TOP ITEMS LIST (SEM SCROLL) */}
+      <div className="flex-1 space-y-3">
         {data.items.map((item, index) => (
           <div key={index} className="flex justify-between items-center p-3 bg-secondary/50 dark:bg-gray-800/50 rounded-lg hover:bg-secondary dark:hover:bg-gray-800 transition-colors">
             <div>
@@ -120,6 +125,28 @@ export default function SmartShoppingWidget() {
           </div>
         ))}
       </div>
+
+      {/* PAGINAÇÃO */}
+      {/* CORRIGIDO: Adicionado optional chaining (data?.pages) */}
+      {data?.pages > 1 && (
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-secondary dark:border-gray-700">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1}
+            className="text-xs font-bold text-muted hover:text-darkText dark:hover:text-lightText disabled:opacity-50"
+          >
+            ← Anterior
+          </button>
+          <span className="text-xs text-muted">Página {data.page} de {data.pages}</span>
+          <button 
+            onClick={() => setPage(p => Math.min(data.pages, p + 1))} 
+            disabled={page === data.pages}
+            className="text-xs font-bold text-muted hover:text-darkText dark:hover:text-lightText disabled:opacity-50"
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

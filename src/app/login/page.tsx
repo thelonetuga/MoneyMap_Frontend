@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/services/api'; // Usar a instância do Axios
+import { loginUser } from '@/services/api'; // Usar helper
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,19 +18,15 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Axios lança erro automaticamente se o status não for 2xx
-      const res = await api.post('/auth/token', new URLSearchParams({ username: email, password }), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-
-      login(res.data.access_token);
+      // Usar helper do api.ts
+      const data = await loginUser(email, password);
+      login(data.access_token);
     } catch (err: any) {
       console.error(err);
       
-      // Tratamento de erros específico
       if (err.response) {
         if (err.response.status === 403) {
-          setError('A sua conta foi bloqueada. Por favor contacte o suporte.');
+          setError('A sua conta foi bloqueada. Por favor contacte o administrador.');
         } else if (err.response.status === 401) {
           setError('Email ou password incorretos.');
         } else {

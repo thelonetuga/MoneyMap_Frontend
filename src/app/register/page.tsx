@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import api, { loginUser } from '@/services/api'; // Importar loginUser
-import { useAuth } from '@/context/AuthContext'; // Importar useAuth
+import { registerUser, loginUser } from '@/services/api'; // Usar helpers
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth(); // Hook de autenticação
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -40,7 +40,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // 1. Criar Utilizador
+      // 1. Criar Utilizador (Usando helper)
       const payload = {
         email: formData.email,
         password: formData.password,
@@ -51,14 +51,13 @@ export default function RegisterPage() {
         }
       };
 
-      await api.post('/users/', payload);
+      await registerUser(payload);
 
-      // 2. Fazer Login Automático
+      // 2. Fazer Login Automático (Usando helper)
       const loginData = await loginUser(formData.email, formData.password);
       
       // 3. Guardar Token e Redirecionar
       login(loginData.access_token);
-      // O redirecionamento é tratado dentro do login() ou pelo AuthContext, mas por segurança:
       router.push('/');
 
     } catch (err: any) {

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getTransactions } from '../../services/api';
-import { TransactionQueryParams, TransactionResponse } from '../../types/models';
+import { getTransactions } from '@/services/api';
+import { TransactionQueryParams, TransactionResponse } from '@/types/models';
 import api from '@/services/api';
 import EditTransactionModal from '@/components/EditTransactionModal';
 
@@ -37,7 +37,7 @@ export default function TransactionsPage() {
 
   // Query de Categorias e Tipos
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => api.get('/categories/').then(res => res.data) });
-  const { data: types } = useQuery({ queryKey: ['types'], queryFn: () => api.get('/lookups/transaction-types').then(res => res.data) });
+  const { data: types } = useQuery({ queryKey: ['types'], queryFn: () => api.get('/lookups/transaction-types/').then(res => res.data) });
 
   // Query de Transações
   const { data, isLoading, isError } = useQuery({
@@ -86,7 +86,7 @@ export default function TransactionsPage() {
     if (!confirm(`Tem a certeza que deseja apagar ${selectedIds.length} transações?`)) return;
     setIsBulkDeleting(true);
     try {
-      await Promise.all(selectedIds.map(id => api.delete(`/transactions/${id}`)));
+      await Promise.all(selectedIds.map(id => api.delete(`/transactions/${id}/`)));
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       setSelectedIds([]);
@@ -102,7 +102,7 @@ export default function TransactionsPage() {
   const handleDeleteOne = async (id: number) => {
     if (!confirm('Tem a certeza que deseja apagar esta transação?')) return;
     try {
-      await api.delete(`/transactions/${id}`);
+      await api.delete(`/transactions/${id}/`);
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       if (selectedIds.includes(id)) {
@@ -147,12 +147,12 @@ export default function TransactionsPage() {
         initialData={editingTx}
       />
 
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 transition-colors duration-200">
+      <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
         <div className="max-w-7xl mx-auto">
           
           {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Extrato de Transações</h1>
+            <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText">Extrato de Transações</h1>
             <div className="flex gap-2">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
@@ -172,7 +172,13 @@ export default function TransactionsPage() {
                 <option value="amount_asc">Menor Valor</option>
               </select>
 
-              <button onClick={() => router.push('/add')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">+ Nova</button>
+              {/* BOTÃO NOVA TRANSAÇÃO (CORRIGIDO) */}
+              <button 
+                onClick={() => router.push('/add')} 
+                className="bg-accent hover:bg-accent/90 text-primary font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-glow"
+              >
+                + Nova
+              </button>
             </div>
           </div>
 
@@ -188,7 +194,7 @@ export default function TransactionsPage() {
                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
                 >
                   <option value="">Todas</option>
-                  {categories?.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                  {Array.isArray(categories) && categories.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
               </div>
 
@@ -201,7 +207,7 @@ export default function TransactionsPage() {
                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
                 >
                   <option value="">Todos</option>
-                  {types?.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {Array.isArray(types) && types.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
 
@@ -272,7 +278,14 @@ export default function TransactionsPage() {
                       <td className="p-4 w-4"><input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelectOne(tx.id)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></td>
                       <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-400">{tx.date}</td>
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{tx.description}{tx.symbol && (<span className="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-0.5 rounded">{tx.symbol}</span>)}</td>
-                      <td className="px-6 py-4">{tx.category?.name || tx.sub_category?.name || '-'}</td>
+                      <td className="px-6 py-4">
+                        {tx.category?.name || '-'}
+                        {tx.sub_category && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 block">
+                            ↳ {tx.sub_category.name}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-6 py-4">{tx.account.name}</td>
                       <td className={`px-6 py-4 text-right font-bold ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
                       <td className="px-6 py-4 text-center flex justify-center gap-2">

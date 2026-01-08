@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary } from '../types/models';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary } from '@/types/models';
 
 // Lógica para Runtime Environment Variables (Docker/TrueNAS)
 const getBaseUrl = () => {
@@ -58,8 +58,8 @@ export const loginUser = async (username: string, password: string): Promise<{ a
   return response.data;
 };
 
-export const registerUser = async (email: string, password: string): Promise<UserResponse> => {
-  const response = await api.post('/users/', { email, password });
+export const registerUser = async (data: any): Promise<UserResponse> => {
+  const response = await api.post('/users/', data);
   return response.data;
 };
 
@@ -101,9 +101,15 @@ export const getSmartShoppingAnalysis = async (itemName: string, currentPrice: n
   return response.data as SmartShoppingAnalysis;
 };
 
-// NOVO: Resumo de Poupança
-export const getSmartShoppingSummary = async (period: 'month' | 'year' = 'month'): Promise<SmartShoppingSummary> => {
-  const response = await api.get('/analytics/smart-shopping/summary/', { params: { period } });
+export const getSmartShoppingSummary = async (period: 'month' | 'year' | 'all' = 'all', page: number = 1, size: number = 10): Promise<SmartShoppingSummary> => {
+  const safePeriod = period || 'all';
+  const response = await api.get('/analytics/smart-shopping/summary/', { 
+    params: { 
+      period: safePeriod,
+      page,
+      size
+    } 
+  });
   return response.data as SmartShoppingSummary;
 };
 
@@ -117,6 +123,11 @@ export const getTransactions = async (params?: TransactionQueryParams): Promise<
 export const createTransaction = async (data: any): Promise<TransactionResponse> => {
   const response = await api.post('/transactions/', data);
   return response.data;
+};
+
+// NOVO: Transferência entre contas
+export const transferFunds = async (data: { source_account_id: number; destination_account_id: number; amount: number; date: string; description: string }): Promise<void> => {
+  await api.post('/transactions/transfer/', data);
 };
 
 export const exportTransactions = async (): Promise<Blob> => {

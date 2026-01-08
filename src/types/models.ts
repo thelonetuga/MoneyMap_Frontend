@@ -241,11 +241,16 @@ export interface SmartShoppingAnalysis {
 
 export interface SmartShoppingItem {
   item_name: string;
-  total_savings: number; // Pode ser negativo se gastou mais
+  total_savings: number;
   purchase_count: number;
 }
 
 export interface SmartShoppingSummary {
   total_savings: number;
   items: SmartShoppingItem[];
+  // Paginação
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
 }
