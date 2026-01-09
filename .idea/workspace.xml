@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="reset password">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/forgot-password/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/reset-password/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/add/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/add/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/icon.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/icon.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
-    </list>
+    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="reset password" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -53,6 +45,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
     "js.debugger.nextJs.config.created.client": "true",
     "js.debugger.nextJs.config.created.server": "true",
     "junie.onboarding.icon.badge.shown": "true",
@@ -94,8 +87,17 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767997245319</updated>
-      <workItem from="1767997247129" duration="2366000" />
+      <workItem from="1767997247129" duration="2692000" />
     </task>
+    <task id="LOCAL-00001" summary="reset password">
+      <option name="closed" value="true" />
+      <created>1768000189819</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1768000189819</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

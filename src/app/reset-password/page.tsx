@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { resetPassword } from '@/services/api';
 
-export default function ResetPasswordPage() {
+// Componente interno que usa useSearchParams
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -16,7 +16,6 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Redirecionar se não houver token
   useEffect(() => {
     if (!token) {
       setStatus('error');
@@ -33,7 +32,6 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // Validação básica de complexidade
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
       setErrorMsg('A password deve ter pelo menos 8 caracteres, 1 maiúscula e 1 número.');
@@ -58,67 +56,74 @@ export default function ResetPasswordPage() {
 
   if (status === 'success') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary p-4">
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
-            ✅
-          </div>
-          <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-2">Password Alterada!</h1>
-          <p className="text-muted">A sua password foi atualizada com sucesso.</p>
-          <p className="text-sm text-muted mt-4">A redirecionar para o login...</p>
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md text-center">
+        <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+          ✅
         </div>
-      </main>
+        <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-2">Password Alterada!</h1>
+        <p className="text-muted">A sua password foi atualizada com sucesso.</p>
+        <p className="text-sm text-muted mt-4">A redirecionar para o login...</p>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary p-4 transition-colors duration-300">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-heading font-bold text-accent mb-2">Nova Password</h1>
-          <p className="text-muted text-sm">Defina a sua nova password segura.</p>
+    <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-heading font-bold text-accent mb-2">Nova Password</h1>
+        <p className="text-muted text-sm">Defina a sua nova password segura.</p>
+      </div>
+
+      {status === 'error' && (
+        <div className="mb-4 p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg text-center font-medium">
+          {errorMsg}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-xs font-bold text-muted uppercase mb-1">Nova Password</label>
+          <input 
+            type="password" 
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
+            placeholder="••••••••"
+          />
         </div>
 
-        {status === 'error' && (
-          <div className="mb-4 p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg text-center font-medium">
-            {errorMsg}
-          </div>
-        )}
+        <div>
+          <label className="block text-xs font-bold text-muted uppercase mb-1">Confirmar Password</label>
+          <input 
+            type="password" 
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
+            placeholder="••••••••"
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Nova Password</label>
-            <input 
-              type="password" 
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="••••••••"
-            />
-          </div>
+        <button 
+          type="submit" 
+          disabled={loading || !token}
+          className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-heading font-bold rounded-xl transition-all shadow-glow disabled:opacity-50"
+        >
+          {loading ? 'A alterar...' : 'Alterar Password'}
+        </button>
+      </form>
+    </div>
+  );
+}
 
-          <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Confirmar Password</label>
-            <input 
-              type="password" 
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading || !token}
-            className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-heading font-bold rounded-xl transition-all shadow-glow disabled:opacity-50"
-          >
-            {loading ? 'A alterar...' : 'Alterar Password'}
-          </button>
-        </form>
-      </div>
+// Página Principal com Suspense
+export default function ResetPasswordPage() {
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary p-4 transition-colors duration-300">
+      <Suspense fallback={<div className="text-muted animate-pulse">A carregar...</div>}>
+        <ResetPasswordForm />
+      </Suspense>
     </main>
   );
 }
