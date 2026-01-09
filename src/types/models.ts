@@ -60,7 +60,7 @@ export interface UserResponse extends UserBase {
   profile?: UserProfileResponse | null;
 }
 
-// --- 3. CATEGORIAS ---
+// --- 3. CATEGORIAS E TAGS ---
 
 export interface SubCategoryBase {
   name: string;
@@ -85,6 +85,13 @@ export interface CategoryResponse extends CategoryBase {
   id: number;
   user_id?: number | null;
   subcategories: SubCategoryResponse[];
+}
+
+// NOVO: Tags
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
 }
 
 // --- 4. ATIVOS (ASSETS) ---
@@ -131,7 +138,7 @@ export interface HoldingResponse extends HoldingBase {
   asset: AssetResponse;
 }
 
-// --- 7. TRANSAÇÕES ---
+// --- 7. TRANSAÇÕES E RECORRÊNCIA ---
 
 export interface TransactionBase {
   date: string; // date YYYY-MM-DD
@@ -142,7 +149,7 @@ export interface TransactionBase {
   quantity?: number | null;
   price_per_unit?: number | null;
   symbol?: string | null;
-  measurement_unit?: string | null; // NOVO: kg, l, un
+  measurement_unit?: string | null;
 }
 
 export interface TransactionCreate extends TransactionBase {
@@ -152,6 +159,9 @@ export interface TransactionCreate extends TransactionBase {
   category_id?: number | null;
   sub_category_id?: number | null;
   asset_id?: number | null;
+  
+  // NOVO: Tags
+  tag_ids?: number[];
 }
 
 export interface TransactionResponse extends TransactionBase {
@@ -169,6 +179,20 @@ export interface TransactionResponse extends TransactionBase {
   sub_category?: SubCategoryResponse | null;
   asset?: AssetResponse | null;
   account: AccountResponse;
+  tags?: Tag[]; // NOVO
+}
+
+// NOVO: Recorrência
+export interface RecurringTransaction {
+  id: number;
+  description: string;
+  amount: number;
+  frequency: 'monthly' | 'weekly';
+  start_date: string;
+  next_date: string;
+  active: boolean;
+  account_name?: string; // Para display
+  category_name?: string; // Para display
 }
 
 // --- 8. RELATÓRIOS ---

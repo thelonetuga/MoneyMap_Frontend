@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api from '@/services/api';
+import api, { getTags } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { Tag } from '@/types/models';
 
 interface ModalProps {
   isOpen: boolean;
@@ -27,29 +28,42 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   
   // Form State
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   
   // Smart Shopping State
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('un');
 
   const isBulk = transactionIds.length > 1;
-  const canUseSmartShopping = user?.role === 'admin' || user?.role === 'premium';
+  const canUsePremiumFeatures = user?.role === 'admin' || user?.role === 'premium';
 
   // Carregar Dados
   useEffect(() => {
     if (isOpen) {
-      Promise.all([
-        api.get('/categories/'),
-        api.get('/accounts/')
-      ]).then(([catRes, accRes]) => {
-        setCategories(catRes.data);
-        setAccounts(accRes.data);
-      }).catch(console.error);
+      const loadData = async () => {
+        try {
+          const [catRes, accRes] = await Promise.all([
+            api.get('/categories/'),
+            api.get('/accounts/')
+          ]);
+          setCategories(catRes.data);
+          setAccounts(accRes.data);
+
+          if (canUsePremiumFeatures) {
+            const tagsData = await getTags();
+            setTags(tagsData);
+          }
+        } catch (err) {
+          console.error("Erro ao carregar dados do modal:", err);
+        }
+      };
+      loadData();
       
       if (!isBulk && initialData) {
         setDescription(initialData.description);
@@ -58,21 +72,33 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
         
         setQuantity(initialData.quantity || '');
         setUnit(initialData.measurement_unit || 'un');
+        
+        if (initialData.tags) {
+          setSelectedTagIds(initialData.tags.map((t: Tag) => t.id));
+        } else {
+          setSelectedTagIds([]);
+        }
       } else {
         setDescription('');
         setCategoryId('');
         setAccountId('');
         setQuantity('');
         setUnit('un');
+        setSelectedTagIds([]);
       }
     }
-  }, [isOpen, isBulk, initialData]);
+  }, [isOpen, isBulk, initialData, canUsePremiumFeatures]);
+
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds(prev => 
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // VALIDAÇÃO: Apenas Conta é obrigatória
     if (!isBulk) {
       if (!accountId) {
         alert('A Conta é obrigatória.');
@@ -85,7 +111,6 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
       const payload: any = {};
       if (description) payload.description = description;
       
-      // Categoria é opcional (pode ser enviada vazia ou alterada)
       if (categoryId) {
         payload.category_id = Number(categoryId);
       } else if (!isBulk) {
@@ -94,9 +119,10 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
 
       if (accountId) payload.account_id = Number(accountId);
       
-      if (canUseSmartShopping) {
+      if (canUsePremiumFeatures) {
         if (quantity) payload.quantity = Number(quantity);
         if (unit) payload.measurement_unit = unit;
+        payload.tag_ids = selectedTagIds;
       }
 
       await Promise.all(transactionIds.map(id => api.patch(`/transactions/${id}/`, payload)));
@@ -148,7 +174,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             </select>
           </div>
 
-          {/* CATEGORIA (OPCIONAL) */}
+          {/* CATEGORIA */}
           <div>
             <label className="block text-xs font-bold text-muted uppercase mb-1">Categoria</label>
             <select 
@@ -163,8 +189,35 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             </select>
           </div>
 
+          {/* TAGS (Premium) */}
+          {canUsePremiumFeatures && tags.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold text-muted uppercase mb-2">Tags</label>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => toggleTag(tag.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                      selectedTagIds.includes(tag.id)
+                        ? 'text-white border-transparent shadow-sm'
+                        : 'bg-transparent text-muted border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                    }`}
+                    style={{ 
+                      backgroundColor: selectedTagIds.includes(tag.id) ? tag.color : 'transparent',
+                      borderColor: selectedTagIds.includes(tag.id) ? tag.color : undefined
+                    }}
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SMART SHOPPING (Apenas Premium/Admin) */}
-          {canUseSmartShopping && (
+          {canUsePremiumFeatures && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10">
               <h3 className="text-xs font-bold text-accent uppercase mb-2 flex items-center gap-1">
                 🛒 Smart Shopping

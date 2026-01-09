@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, updateAccountBalance, Rule } from '@/services/api';
+import api, { deleteAccount, getRules, createRule, deleteRule, exportTransactions, updateAccountBalance, getTags, createTag, deleteTag, getRecurringTransactions, deleteRecurringTransaction, Rule } from '@/services/api';
+import { Tag, RecurringTransaction } from '@/types/models'; // CORRIGIDO: Importar de models
 import { useAuth } from '@/context/AuthContext';
 import ConfirmationModal from '@/components/ConfirmationModal';
 
@@ -27,12 +28,14 @@ interface Account {
 export default function SettingsPage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'accounts' | 'categories' | 'rules' | 'data'>('accounts');
+    const [activeTab, setActiveTab] = useState<'accounts' | 'categories' | 'tags' | 'recurring' | 'rules' | 'data'>('accounts');
 
     // Estados Globais
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [rules, setRules] = useState<Rule[]>([]);
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
     
     // Inputs Contas/Categorias
     const [newAccName, setNewAccName] = useState('');
@@ -41,6 +44,10 @@ export default function SettingsPage() {
     const [newCatName, setNewCatName] = useState('');
     const [newSubName, setNewSubName] = useState('');
     const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
+
+    // Inputs Tags
+    const [newTagName, setNewTagName] = useState('');
+    const [newTagColor, setNewTagColor] = useState('#00DC82');
 
     // Estado de Edição de Saldo
     const [editingBalanceId, setEditingBalanceId] = useState<number | null>(null);
@@ -83,10 +90,16 @@ export default function SettingsPage() {
         finally { setLoading(false); }
     };
 
-    // Carregar regras apenas quando a tab é aberta
+    // Carregar dados específicos da tab
     useEffect(() => {
-        if (activeTab === 'rules' && canAccessPremium) {
-            getRules().then(setRules).catch(console.error);
+        if (!canAccessPremium) return;
+        
+        if (activeTab === 'rules') {
+            getRules().then(data => setRules(data)).catch(console.error);
+        } else if (activeTab === 'tags') {
+            getTags().then(data => setTags(data)).catch(console.error);
+        } else if (activeTab === 'recurring') {
+            getRecurringTransactions().then(data => setRecurring(data)).catch(console.error);
         }
     }, [activeTab, canAccessPremium]);
 
@@ -125,30 +138,19 @@ export default function SettingsPage() {
         }
     };
 
-    // Handler para iniciar edição de saldo
     const startEditingBalance = (acc: Account) => {
         setEditingBalanceId(acc.id);
         setEditBalanceValue(String(acc.current_balance));
     };
 
-    // Handler para salvar novo saldo
     const saveNewBalance = async (id: number) => {
         if (!editBalanceValue || isNaN(Number(editBalanceValue))) return;
-        
         try {
             await updateAccountBalance(id, Number(editBalanceValue));
-            
-            // Atualizar estado local
-            setAccounts(accounts.map(acc => 
-                acc.id === id ? { ...acc, current_balance: Number(editBalanceValue) } : acc
-            ));
-            
+            setAccounts(accounts.map(acc => acc.id === id ? { ...acc, current_balance: Number(editBalanceValue) } : acc));
             setEditingBalanceId(null);
             alert('Saldo ajustado com sucesso! Foi criada uma transação de ajuste.');
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao atualizar saldo.');
-        }
+        } catch (err) { console.error(err); alert('Erro ao atualizar saldo.'); }
     };
 
     const handleCreateCategory = async (e: React.FormEvent) => {
@@ -210,6 +212,50 @@ export default function SettingsPage() {
             await api.delete(`/categories/${id}/`); 
             setCategories(categories.filter(c => c.id !== id));
         } catch (err) { alert('Erro: Verifique se a categoria tem transações.'); }
+    };
+
+    // --- TAGS ---
+    const handleCreateTag = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTagName) return;
+        try {
+            const newTag = await createTag(newTagName, newTagColor);
+            setTags([...tags, newTag]);
+            setNewTagName('');
+        } catch (err) { alert('Erro ao criar tag.'); }
+    };
+
+    const handleDeleteTagClick = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Apagar Tag?',
+            message: 'Tem a certeza que deseja apagar esta tag?',
+            action: () => executeDeleteTag(id)
+        });
+    };
+
+    const executeDeleteTag = async (id: number) => {
+        try {
+            await deleteTag(id);
+            setTags(tags.filter(t => t.id !== id));
+        } catch (err) { alert('Erro ao apagar tag.'); }
+    };
+
+    // --- RECORRÊNCIA ---
+    const handleDeleteRecurringClick = (id: number) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Cancelar Recorrência?',
+            message: 'Isto irá parar a criação automática de futuras transações. As transações já criadas não serão afetadas.',
+            action: () => executeDeleteRecurring(id)
+        });
+    };
+
+    const executeDeleteRecurring = async (id: number) => {
+        try {
+            await deleteRecurringTransaction(id);
+            setRecurring(recurring.filter(r => r.id !== id));
+        } catch (err) { alert('Erro ao cancelar recorrência.'); }
     };
 
     // --- REGRAS ---
@@ -298,8 +344,9 @@ export default function SettingsPage() {
     };
 
     // --- UI ---
-    const tabClass = (tab: string) => `px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}`;
+    const tabClass = (tab: string) => `px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-accent text-primary shadow-lg shadow-accent/20' : 'bg-white text-gray-500 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}`;
     const inputClass = "w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium dark:text-white";
+    const buttonClass = "w-full py-3 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-glow";
 
     if (loading) return <div className="p-10 text-center text-gray-400">A carregar... ⚙️</div>;
 
@@ -320,6 +367,8 @@ export default function SettingsPage() {
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                 <button onClick={() => setActiveTab('accounts')} className={tabClass('accounts')}>🏦 Contas</button>
                 <button onClick={() => setActiveTab('categories')} className={tabClass('categories')}>🏷️ Categorias</button>
+                {canAccessPremium && <button onClick={() => setActiveTab('tags')} className={tabClass('tags')}>🏷️ Tags</button>}
+                {canAccessPremium && <button onClick={() => setActiveTab('recurring')} className={tabClass('recurring')}>🔄 Recorrência</button>}
                 {canAccessPremium && <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Regras</button>}
                 {canAccessPremium && <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Dados</button>}
             </div>
@@ -332,18 +381,9 @@ export default function SettingsPage() {
                             <div key={acc.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
                                 <div><p className="font-bold text-gray-800 dark:text-white">{acc.name}</p><p className="text-sm text-gray-500 dark:text-gray-400">{acc.account_type?.name}</p></div>
                                 <div className="flex items-center gap-4">
-                                    
-                                    {/* EDIÇÃO DE SALDO */}
                                     {editingBalanceId === acc.id ? (
                                         <div className="flex items-center gap-2">
-                                            <input 
-                                                type="number" 
-                                                step="0.01"
-                                                value={editBalanceValue}
-                                                onChange={(e) => setEditBalanceValue(e.target.value)}
-                                                className="w-24 p-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-700 text-darkText dark:text-lightText outline-none"
-                                                autoFocus
-                                            />
+                                            <input type="number" step="0.01" value={editBalanceValue} onChange={(e) => setEditBalanceValue(e.target.value)} className="w-24 p-1 text-sm border border-blue-500 rounded bg-white dark:bg-gray-700 text-darkText dark:text-lightText outline-none" autoFocus />
                                             <button onClick={() => saveNewBalance(acc.id)} className="text-green-500 hover:text-green-600 font-bold">✓</button>
                                             <button onClick={() => setEditingBalanceId(null)} className="text-red-500 hover:text-red-600 font-bold">✕</button>
                                         </div>
@@ -353,7 +393,6 @@ export default function SettingsPage() {
                                             <span className="opacity-0 group-hover/balance:opacity-100 text-xs text-gray-400">✎</span>
                                         </div>
                                     )}
-
                                     <button onClick={() => handleDeleteAccountClick(acc.id)} className="text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Apagar Conta">🗑️</button>
                                 </div>
                             </div>
@@ -361,20 +400,19 @@ export default function SettingsPage() {
                         {accounts.length === 0 && <p className="text-gray-400 italic text-center">Sem contas criadas.</p>}
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
-                        <h2 className="text-xl font-bold text-blue-600 mb-6">+ Nova Conta</h2>
+                        <h2 className="text-xl font-bold text-accent mb-6">+ Nova Conta</h2>
                         <form onSubmit={handleCreateAccount} className="space-y-4">
                             <input placeholder="Nome" value={newAccName} onChange={e => setNewAccName(e.target.value)} className={inputClass} />
                             <select value={newAccType} onChange={e => setNewAccType(e.target.value)} className={inputClass}>
                                 <option value="1">🏦 Conta Bancária</option><option value="2">📈 Investimento</option><option value="3">💵 Carteira</option>
                             </select>
                             <input type="number" placeholder="Saldo Inicial" value={newAccBalance} onChange={e => setNewAccBalance(e.target.value)} className={inputClass} />
-                            <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Criar</button>
+                            <button type="submit" className={buttonClass}>Criar</button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* ... (Resto das tabs mantêm-se iguais) ... */}
             {/* TAB CATEGORIAS */}
             {activeTab === 'categories' && (
                 <div className="grid md:grid-cols-2 gap-8">
@@ -397,7 +435,7 @@ export default function SettingsPage() {
                                         </div>
                                         <div className="flex gap-2">
                                             <input placeholder="Nova sub..." value={newSubName} onChange={e => setNewSubName(e.target.value)} className={`flex-1 p-2 rounded-lg text-sm outline-none ${inputClass}`} />
-                                            <button onClick={() => handleCreateSubCategory(cat.id)} className="px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm font-bold rounded-lg">+</button>
+                                            <button onClick={() => handleCreateSubCategory(cat.id)} className="px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm font-bold rounded-lg hover:bg-gray-900 dark:hover:bg-gray-600">+</button>
                                         </div>
                                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-right"><button onClick={() => handleDeleteCategoryClick(cat.id)} className="text-xs text-red-500 hover:underline">Apagar Categoria</button></div>
                                     </div>
@@ -406,16 +444,77 @@ export default function SettingsPage() {
                         ))}
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit sticky top-24">
-                        <h2 className="text-xl font-bold text-blue-600 mb-6">+ Nova Categoria</h2>
+                        <h2 className="text-xl font-bold text-accent mb-6">+ Nova Categoria</h2>
                         <form onSubmit={handleCreateCategory} className="flex gap-2">
                             <input placeholder="Nome" value={newCatName} onChange={e => setNewCatName(e.target.value)} className={inputClass} />
-                            <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl">+</button>
+                            <button type="submit" className="px-6 py-3 bg-accent text-primary font-bold rounded-xl hover:bg-accent/90">+</button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* TAB REGRAS (NOVO) */}
+            {/* TAB TAGS (NOVO) */}
+            {activeTab === 'tags' && canAccessPremium && (
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                        {tags.map(tag => (
+                            <div key={tag.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                                    <p className="font-bold text-gray-800 dark:text-white">{tag.name}</p>
+                                </div>
+                                <button onClick={() => handleDeleteTagClick(tag.id)} className="text-gray-300 hover:text-red-500">×</button>
+                            </div>
+                        ))}
+                        {tags.length === 0 && <p className="text-gray-400 italic text-center">Sem tags criadas.</p>}
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
+                        <h2 className="text-xl font-bold text-accent mb-6">+ Nova Tag</h2>
+                        <form onSubmit={handleCreateTag} className="space-y-4">
+                            <input placeholder="Nome (ex: Férias)" value={newTagName} onChange={e => setNewTagName(e.target.value)} className={inputClass} />
+                            <div className="flex items-center gap-2">
+                                <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="h-12 w-12 rounded cursor-pointer border-none" />
+                                <span className="text-sm text-muted">Cor da Tag</span>
+                            </div>
+                            <button type="submit" className={buttonClass}>Criar Tag</button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB RECORRÊNCIA (NOVO) */}
+            {activeTab === 'recurring' && canAccessPremium && (
+                <div className="space-y-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 mb-6">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                            ℹ️ Aqui podes gerir as tuas transações automáticas. Para criar uma nova, usa a opção <b>"Recorrente"</b> ao adicionar uma transação.
+                        </p>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                        {recurring.map(rec => (
+                            <div key={rec.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold text-gray-800 dark:text-white">{rec.description}</p>
+                                        <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-muted uppercase">{rec.frequency === 'monthly' ? 'Mensal' : 'Semanal'}</span>
+                                    </div>
+                                    <p className="text-sm text-muted">{rec.amount.toFixed(2)} € • Próxima: {rec.next_date}</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleDeleteRecurringClick(rec.id)} 
+                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        ))}
+                        {recurring.length === 0 && <p className="text-gray-400 italic text-center py-8">Sem recorrências ativas.</p>}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB REGRAS */}
             {activeTab === 'rules' && canAccessPremium && (
                 <div className="grid md:grid-cols-2 gap-8">
                     <div className="space-y-3">
@@ -436,7 +535,7 @@ export default function SettingsPage() {
                         {rules.length === 0 && <p className="text-gray-400 italic text-center">Sem regras de automação.</p>}
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
-                        <h2 className="text-xl font-bold text-blue-600 mb-6">Nova Regra 🤖</h2>
+                        <h2 className="text-xl font-bold text-accent mb-6">Nova Regra 🤖</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Categoriza automaticamente transações importadas.</p>
                         <form onSubmit={handleCreateRule} className="space-y-4">
                             <input placeholder="Texto a procurar (ex: Uber)" value={newRulePattern} onChange={e => setNewRulePattern(e.target.value)} className={inputClass} />
@@ -444,7 +543,7 @@ export default function SettingsPage() {
                                 <option value="">Selecionar Categoria...</option>
                                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
-                            <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700">Criar Regra</button>
+                            <button type="submit" className={buttonClass}>Criar Regra</button>
                         </form>
                     </div>
                 </div>
@@ -457,7 +556,7 @@ export default function SettingsPage() {
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold text-gray-700 dark:text-white">Importar Extrato 📂</h2>
-                            <button onClick={handleDownloadTemplate} className="text-blue-600 dark:text-blue-400 text-xs font-bold hover:underline bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                            <button onClick={handleDownloadTemplate} className="text-accent dark:text-accent text-xs font-bold hover:underline bg-accent/10 px-3 py-1 rounded-full">
                                 📥 Baixar Template
                             </button>
                         </div>
@@ -485,7 +584,7 @@ export default function SettingsPage() {
                                 </div>
                             )}
 
-                            <button type="submit" disabled={!importFile || importLoading || !importAccount} className={`w-full py-4 rounded-2xl text-white font-bold transition-all ${!importFile || importLoading ? 'bg-gray-300 dark:bg-gray-700' : 'bg-blue-600 hover:bg-blue-700 shadow-lg'}`}>
+                            <button type="submit" disabled={!importFile || importLoading || !importAccount} className={`w-full py-4 rounded-2xl text-primary font-bold transition-all ${!importFile || importLoading ? 'bg-gray-300 dark:bg-gray-700' : 'bg-accent hover:bg-accent/90 shadow-lg'}`}>
                                 {importLoading ? 'A processar...' : 'Importar Agora'}
                             </button>
                         </form>

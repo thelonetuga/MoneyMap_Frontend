@@ -3,16 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import api, { createTransaction, transferFunds, getSmartShoppingAnalysis } from '@/services/api';
+import api, { createTransaction, transferFunds, getSmartShoppingAnalysis, getTags, createRecurringTransaction } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { SmartShoppingAnalysis } from '@/types/models';
+import { SmartShoppingAnalysis, Tag } from '@/types/models';
 
 interface Option {
   id: number;
   name: string;
 }
 
-// CORRIGIDO: Adicionado current_balance opcional
 interface AccountOption {
   id: number;
   name: string;
@@ -57,6 +56,7 @@ export default function AddTransaction() {
   const [types, setTypes] = useState<TypeOption[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   // Form Transação
   const [formData, setFormData] = useState({
@@ -70,7 +70,12 @@ export default function AddTransaction() {
     symbol: '',
     quantity: '',
     measurement_unit: 'un',
-    price_per_unit: ''
+    price_per_unit: '',
+    // Recorrência
+    is_recurring: false,
+    frequency: 'monthly',
+    // Tags
+    tag_ids: [] as number[]
   });
 
   // Form Transferência
@@ -90,6 +95,7 @@ export default function AddTransaction() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // CORRIGIDO: Promise.all com tipos mistos
         const [typesRes, accountsRes, catsRes] = await Promise.all([
           api.get('/lookups/transaction-types/'),
           api.get('/accounts/'),
@@ -99,6 +105,15 @@ export default function AddTransaction() {
         setTypes(typesRes.data);
         setAccounts(accountsRes.data);
         setCategories(catsRes.data);
+
+        // Carregar Tags separadamente se for premium
+        // (Poderia estar no Promise.all, mas assim é mais seguro com tipos)
+        try {
+            const tagsData = await getTags();
+            setTags(tagsData);
+        } catch (e) {
+            console.warn("Não foi possível carregar tags (talvez não seja premium)");
+        }
 
         // Defaults Transação
         if (typesRes.data.length > 0) setFormData(prev => ({ ...prev, transaction_type_id: String(typesRes.data[0].id) }));
@@ -141,6 +156,8 @@ export default function AddTransaction() {
   const isInvestmentType = selectedType?.is_investment || false;
   const isExpense = selectedType?.name.toLowerCase().includes('despesa') || selectedType?.name.toLowerCase().includes('expense');
   const canUseSmartShopping = (user?.role === 'admin' || user?.role === 'premium') && isExpense;
+  const canUsePremiumFeatures = user?.role === 'admin' || user?.role === 'premium';
+  
   const availableSubCategories = categories.find(c => c.id === Number(formData.category_id))?.subcategories || [];
   const calculatedUnitPrice = (formData.amount && formData.quantity) ? (Math.abs(Number(formData.amount)) / Number(formData.quantity)).toFixed(2) : null;
 
@@ -164,6 +181,15 @@ export default function AddTransaction() {
     }
   };
 
+  const toggleTag = (tagId: number) => {
+    setFormData(prev => {
+      const newTags = prev.tag_ids.includes(tagId)
+        ? prev.tag_ids.filter(id => id !== tagId)
+        : [...prev.tag_ids, tagId];
+      return { ...prev, tag_ids: newTags };
+    });
+  };
+
   const handleSubmitTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -177,6 +203,7 @@ export default function AddTransaction() {
       date: formData.date,
       account_id: Number(formData.account_id),
       transaction_type_id: Number(formData.transaction_type_id),
+      tag_ids: formData.tag_ids
     };
 
     if (formData.category_id) payload.category_id = Number(formData.category_id);
@@ -193,7 +220,17 @@ export default function AddTransaction() {
     }
 
     try {
-      await createTransaction(payload);
+      if (formData.is_recurring && canUsePremiumFeatures) {
+        // Criar Recorrência
+        await createRecurringTransaction({
+          ...payload,
+          frequency: formData.frequency,
+          start_date: formData.date
+        });
+      } else {
+        // Criar Transação Normal
+        await createTransaction(payload);
+      }
       finishSubmit();
     } catch (err: any) {
       setError(err.response?.data?.detail || "Ocorreu um erro.");
@@ -334,6 +371,64 @@ export default function AddTransaction() {
               </div>
             </div>
 
+            {/* TAGS (Premium) */}
+            {canUsePremiumFeatures && tags.length > 0 && (
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase mb-2">Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map(tag => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                        formData.tag_ids.includes(tag.id)
+                          ? 'text-white border-transparent shadow-sm'
+                          : 'bg-transparent text-muted border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                      style={{ 
+                        backgroundColor: formData.tag_ids.includes(tag.id) ? tag.color : 'transparent',
+                        borderColor: formData.tag_ids.includes(tag.id) ? tag.color : undefined
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* RECORRÊNCIA (Premium) */}
+            {canUsePremiumFeatures && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.is_recurring} 
+                      onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-bold text-blue-800 dark:text-blue-200">Repetir esta transação?</span>
+                  </label>
+                </div>
+                
+                {formData.is_recurring && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Frequência</label>
+                    <select 
+                      value={formData.frequency} 
+                      onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                      className="w-full p-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg text-sm outline-none"
+                    >
+                      <option value="monthly">Mensalmente</option>
+                      <option value="weekly">Semanalmente</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* SMART SHOPPING */}
             {canUseSmartShopping && !isInvestmentType && (
               <div className="mt-6 p-4 bg-accent/10 rounded-xl border border-accent/20 space-y-3">
@@ -381,7 +476,9 @@ export default function AddTransaction() {
             )}
 
             <div className="pt-4 flex flex-col gap-3">
-              <button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-primary font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">{loading ? 'A processar...' : 'Confirmar'}</button>
+              <button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-primary font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">
+                {loading ? 'A processar...' : (formData.is_recurring ? 'Criar Recorrência' : 'Confirmar')}
+              </button>
               <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancelar</button>
             </div>
           </form>

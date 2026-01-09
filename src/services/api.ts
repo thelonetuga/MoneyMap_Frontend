@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary } from '@/types/models';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary, Tag, RecurringTransaction } from '@/types/models';
 
 // Lógica para Runtime Environment Variables (Docker/TrueNAS)
 const getBaseUrl = () => {
@@ -140,7 +140,6 @@ export const getAccounts = async (): Promise<any[]> => {
   return response.data;
 };
 
-// NOVO: Atualizar Saldo Manualmente
 export const updateAccountBalance = async (id: number, newBalance: number): Promise<void> => {
   await api.patch(`/accounts/${id}/balance/`, { new_balance: newBalance });
 };
@@ -157,6 +156,36 @@ export const getTransactionTypes = async (): Promise<any[]> => {
 
 export const deleteAccount = async (id: number): Promise<void> => {
   await api.delete(`/accounts/${id}/`);
+};
+
+// --- SERVIÇOS DE TAGS (PREMIUM) ---
+export const getTags = async (): Promise<Tag[]> => {
+  const response = await api.get('/tags/');
+  return response.data;
+};
+
+export const createTag = async (name: string, color: string): Promise<Tag> => {
+  const response = await api.post('/tags/', { name, color });
+  return response.data;
+};
+
+export const deleteTag = async (id: number): Promise<void> => {
+  await api.delete(`/tags/${id}/`);
+};
+
+// --- SERVIÇOS DE RECORRÊNCIA (PREMIUM) ---
+export const getRecurringTransactions = async (): Promise<RecurringTransaction[]> => {
+  const response = await api.get('/recurring/');
+  return response.data;
+};
+
+export const createRecurringTransaction = async (data: any): Promise<RecurringTransaction> => {
+  const response = await api.post('/recurring/', data);
+  return response.data;
+};
+
+export const deleteRecurringTransaction = async (id: number): Promise<void> => {
+  await api.delete(`/recurring/${id}/`);
 };
 
 // --- SERVIÇOS DE REGRAS (AUTOMATION) ---
