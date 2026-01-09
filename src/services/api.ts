@@ -63,6 +63,15 @@ export const registerUser = async (data: any): Promise<UserResponse> => {
   return response.data;
 };
 
+// NOVO: Recuperação de Password
+export const forgotPassword = async (email: string): Promise<void> => {
+  await api.post('/auth/forgot-password', { email });
+};
+
+export const resetPassword = async (token: string, new_password: string): Promise<void> => {
+  await api.post('/auth/reset-password', { token, new_password });
+};
+
 // --- SERVIÇOS DE ANALYTICS ---
 
 export const getPortfolio = async (): Promise<PortfolioResponse> => {

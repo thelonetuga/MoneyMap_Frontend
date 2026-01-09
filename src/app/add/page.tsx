@@ -107,7 +107,6 @@ export default function AddTransaction() {
         setCategories(catsRes.data);
 
         // Carregar Tags separadamente se for premium
-        // (Poderia estar no Promise.all, mas assim é mais seguro com tipos)
         try {
             const tagsData = await getTags();
             setTags(tagsData);
@@ -421,8 +420,10 @@ export default function AddTransaction() {
                       onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
                       className="w-full p-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg text-sm outline-none"
                     >
-                      <option value="monthly">Mensalmente</option>
+                      <option value="daily">Diariamente</option>
                       <option value="weekly">Semanalmente</option>
+                      <option value="monthly">Mensalmente</option>
+                      <option value="yearly">Anualmente</option>
                     </select>
                   </div>
                 )}
