@@ -9,16 +9,12 @@ import { useAuth } from "@/context/AuthContext";
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme(); // CORRIGIDO: Removido 'theme' não usado
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Forçar Light Mode se não for Premium/Admin
-    if (user && user.role === 'basic' && theme === 'dark') {
-      setTheme('light');
-    }
-  }, [user, theme, setTheme]);
+  }, []);
 
   // Links styling...
   const linkStyle = (path: string) =>
@@ -94,8 +90,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* THEME TOGGLE (Apenas para Premium/Admin) */}
-            {mounted && canToggleTheme && (
+            {/* THEME TOGGLE (Disponível para todos) */}
+            {mounted && (
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors"
@@ -123,8 +119,8 @@ export default function Navbar() {
                 <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
                   {loading ? "..." : user?.profile?.first_name || user?.email?.split('@')[0]}
                 </p>
-                <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role)}`}>
-                  {getRoleLabel(user?.role)}
+                <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role || undefined)}`}>
+                  {getRoleLabel(user?.role || undefined)}
                 </p>
               </Link>
 
