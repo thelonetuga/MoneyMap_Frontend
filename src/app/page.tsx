@@ -194,7 +194,8 @@ export default function Home() {
               <span className="text-xs font-medium text-muted bg-secondary dark:bg-gray-800 px-2 py-1 rounded-lg">{getRangeLabel(timeRange)}</span>
             </div>
             
-            <div className="h-64 md:h-72 w-full">
+            {/* CORREÇÃO: min-w-0 para evitar erro do Recharts */}
+            <div className="h-64 md:h-72 w-full min-w-0">
               {loadingHistory ? (
                 <div className="h-full flex items-center justify-center text-muted animate-pulse">A carregar gráfico...</div>
               ) : (
@@ -245,7 +246,8 @@ export default function Home() {
             {loadingSpending ? (
                <div className="flex-1 flex items-center justify-center text-muted animate-pulse">A carregar...</div>
             ) : (spending && spending.length > 0) ? (
-              <div className="flex-1 min-h-[250px]">
+              // CORREÇÃO: min-w-0
+              <div className="flex-1 min-h-[250px] min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={spending} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -286,7 +288,8 @@ export default function Home() {
           <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
             <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Portfólio</h2>
             {chartInvest.length > 0 ? (
-              <div className="h-64 w-full">
+              // CORREÇÃO: min-w-0
+              <div className="h-64 w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartInvest} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
