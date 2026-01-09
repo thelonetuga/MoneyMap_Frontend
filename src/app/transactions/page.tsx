@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getTransactions } from '@/services/api'; // CORRIGIDO
-import { TransactionQueryParams, TransactionResponse } from '@/types/models'; // CORRIGIDO
+import { getTransactions } from '@/services/api';
+import { TransactionQueryParams, TransactionResponse } from '@/types/models';
 import api from '@/services/api';
 import EditTransactionModal from '@/components/EditTransactionModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
@@ -181,16 +181,16 @@ export default function TransactionsPage() {
         isDanger={true}
       />
 
-      <main className="min-h-screen bg-secondary dark:bg-primary p-8 transition-colors duration-300">
+      <main className="min-h-screen bg-secondary dark:bg-primary p-4 md:p-8 transition-colors duration-300 pb-24 md:pb-8">
         <div className="max-w-7xl mx-auto">
           
           {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText">Extrato de Transações</h1>
-            <div className="flex gap-2">
+            <h1 className="text-xl md:text-2xl font-heading font-bold text-darkText dark:text-lightText">Extrato de Transações</h1>
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${showFilters ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 whitespace-nowrap ${showFilters ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}
               >
                 🔍 Filtros
               </button>
@@ -209,7 +209,7 @@ export default function TransactionsPage() {
               {/* BOTÃO NOVA TRANSAÇÃO */}
               <button 
                 onClick={() => router.push('/add')} 
-                className="bg-accent hover:bg-accent/90 text-primary font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-glow"
+                className="bg-accent hover:bg-accent/90 text-primary font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-glow whitespace-nowrap"
               >
                 + Nova
               </button>
@@ -281,12 +281,12 @@ export default function TransactionsPage() {
 
           {/* BARRA DE AÇÕES EM MASSA */}
           {selectedIds.length > 0 && (
-            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 p-3 rounded-xl mb-4 flex justify-between items-center animate-fade-in">
-              <span className="text-sm text-blue-800 dark:text-blue-200 font-medium ml-2">{selectedIds.length} selecionadas</span>
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 p-3 rounded-xl mb-4 flex justify-between items-center animate-fade-in overflow-x-auto">
+              <span className="text-sm text-blue-800 dark:text-blue-200 font-medium ml-2 whitespace-nowrap">{selectedIds.length} selecionadas</span>
               <div className="flex gap-2">
-                <button onClick={openBulkEditModal} className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">✏️ Editar</button>
-                <button onClick={handleBulkDeleteClick} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50">{isBulkDeleting ? 'A apagar...' : '🗑️ Apagar'}</button>
-                <button onClick={() => setSelectedIds([])} className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Cancelar</button>
+                <button onClick={openBulkEditModal} className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors whitespace-nowrap">✏️ Editar</button>
+                <button onClick={handleBulkDeleteClick} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 whitespace-nowrap">{isBulkDeleting ? 'A apagar...' : '🗑️ Apagar'}</button>
+                <button onClick={() => setSelectedIds([])} className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">Cancelar</button>
               </div>
             </div>
           )}
@@ -294,25 +294,25 @@ export default function TransactionsPage() {
           {/* TABELA */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[800px]">
                 <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th className="p-4 w-4"><input type="checkbox" checked={(data?.items?.length ?? 0) > 0 && selectedIds.length === (data?.items?.length ?? 0)} onChange={toggleSelectAll} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></th>
-                    <th className="px-6 py-3">Data</th>
-                    <th className="px-6 py-3">Descrição</th>
-                    <th className="px-6 py-3">Categoria</th>
-                    <th className="px-6 py-3">Conta</th>
-                    <th className="px-6 py-3 text-right">Valor</th>
-                    <th className="px-6 py-3 text-center">Ações</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Data</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Descrição</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Categoria</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Conta</th>
+                    <th className="px-6 py-3 text-right whitespace-nowrap">Valor</th>
+                    <th className="px-6 py-3 text-center whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.items.map((tx) => (
                     <tr key={tx.id} className={`border-b dark:border-gray-700 transition-colors ${selectedIds.includes(tx.id) ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                       <td className="p-4 w-4"><input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelectOne(tx.id)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></td>
-                      <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-400">{tx.date}</td>
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{tx.description}{tx.symbol && (<span className="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-0.5 rounded">{tx.symbol}</span>)}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">{tx.date}</td>
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{tx.description}{tx.symbol && (<span className="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-0.5 rounded">{tx.symbol}</span>)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {tx.category?.name || '-'}
                         {tx.sub_category && (
                           <span className="text-xs text-gray-400 dark:text-gray-500 block">
@@ -320,9 +320,9 @@ export default function TransactionsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4">{tx.account.name}</td>
-                      <td className={`px-6 py-4 text-right font-bold ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
-                      <td className="px-6 py-4 text-center flex justify-center gap-2">
+                      <td className="px-6 py-4 whitespace-nowrap">{tx.account.name}</td>
+                      <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      <td className="px-6 py-4 text-center flex justify-center gap-2 whitespace-nowrap">
                         <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1" title="Editar">✏️</button>
                         <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Apagar">🗑️</button>
                       </td>
