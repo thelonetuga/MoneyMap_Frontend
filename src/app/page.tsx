@@ -188,14 +188,14 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
           {/* GRÁFICO DE ÁREA (Evolução) */}
-          <div className="lg:col-span-2 bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+          {/* CORREÇÃO: min-w-0 no cartão pai */}
+          <div className="lg:col-span-2 bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 min-w-0">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Evolução Patrimonial</h2>
               <span className="text-xs font-medium text-muted bg-secondary dark:bg-gray-800 px-2 py-1 rounded-lg">{getRangeLabel(timeRange)}</span>
             </div>
             
-            {/* CORREÇÃO: min-w-0 para evitar erro do Recharts */}
-            <div className="h-64 md:h-72 w-full min-w-0">
+            <div className="h-64 md:h-72 w-full">
               {loadingHistory ? (
                 <div className="h-full flex items-center justify-center text-muted animate-pulse">A carregar gráfico...</div>
               ) : (
@@ -232,7 +232,8 @@ export default function Home() {
           </div>
 
           {/* GRÁFICO DE DESPESAS */}
-          <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col">
+          {/* CORREÇÃO: min-w-0 no cartão pai */}
+          <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col min-w-0">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Despesas</h2>
               <div className="flex flex-col items-end">
@@ -246,8 +247,7 @@ export default function Home() {
             {loadingSpending ? (
                <div className="flex-1 flex items-center justify-center text-muted animate-pulse">A carregar...</div>
             ) : (spending && spending.length > 0) ? (
-              // CORREÇÃO: min-w-0
-              <div className="flex-1 min-h-[250px] min-w-0">
+              <div className="flex-1 min-h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={spending} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -285,11 +285,11 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* GRÁFICO INVESTIMENTOS */}
-          <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800">
+          {/* CORREÇÃO: min-w-0 no cartão pai */}
+          <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 min-w-0">
             <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Portfólio</h2>
             {chartInvest.length > 0 ? (
-              // CORREÇÃO: min-w-0
-              <div className="h-64 w-full min-w-0">
+              <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartInvest} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">

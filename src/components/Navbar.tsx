@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
-  const { setTheme, resolvedTheme } = useTheme(); // CORRIGIDO: Removido 'theme' não usado
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,8 +50,6 @@ export default function Navbar() {
       setTheme('dark');
     }
   };
-
-  const canToggleTheme = user?.role === 'admin' || user?.role === 'premium';
 
   return (
     <nav className="bg-white dark:bg-primary border-b border-secondary dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300 shadow-soft">
@@ -101,7 +99,7 @@ export default function Navbar() {
               </button>
             )}
 
-            {/* BOTÃO NOVA TRANSAÇÃO */}
+            {/* BOTÃO NOVA TRANSAÇÃO (Desktop) */}
             <Link
               href="/add"
               className={`hidden md:flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-heading font-semibold text-primary bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-glow`}
@@ -114,7 +112,7 @@ export default function Navbar() {
 
             <div className="flex items-center gap-3">
               
-              {/* LINK PARA PERFIL (NOME E CARGO) */}
+              {/* LINK PARA PERFIL (Desktop: Nome/Cargo) */}
               <Link href="/profile" className="text-right hidden sm:flex flex-col items-end justify-center hover:opacity-80 transition-opacity cursor-pointer">
                 <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
                   {loading ? "..." : user?.profile?.first_name || user?.email?.split('@')[0]}
@@ -122,6 +120,13 @@ export default function Navbar() {
                 <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role || undefined)}`}>
                   {getRoleLabel(user?.role || undefined)}
                 </p>
+              </Link>
+
+              {/* LINK PARA PERFIL (Mobile: Ícone) - NOVO */}
+              <Link href="/profile" className="sm:hidden p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
               </Link>
 
               <button
