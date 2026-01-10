@@ -63,9 +63,9 @@ export const registerUser = async (data: any): Promise<UserResponse> => {
   return response.data;
 };
 
-// NOVO: Recuperação de Password
-export const forgotPassword = async (email: string): Promise<void> => {
-  await api.post('/auth/forgot-password', { email });
+// NOVO: Recuperação de Password com Redirect URL
+export const forgotPassword = async (email: string, redirectUrl?: string): Promise<void> => {
+  await api.post('/auth/forgot-password', { email, redirect_url: redirectUrl });
 };
 
 export const resetPassword = async (token: string, new_password: string): Promise<void> => {

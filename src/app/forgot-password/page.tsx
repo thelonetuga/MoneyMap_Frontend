@@ -16,7 +16,9 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
-      await forgotPassword(email);
+      // Enviar a URL base atual para o backend saber para onde redirecionar
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+      await forgotPassword(email, redirectUrl);
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
