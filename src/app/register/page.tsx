@@ -25,14 +25,28 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
+    // Regex para nomes (Letras, Acentos, Espaços, Hífens)
+    const nameRegex = /^[a-zA-Z\u00C0-\u00FF\s-]+$/;
+
     // 1. Validar Nomes
     if (formData.firstName.trim().length < 2) {
       setError('First Name must be at least 2 characters long.');
       setLoading(false);
       return;
     }
+    if (!nameRegex.test(formData.firstName)) {
+      setError('First Name cannot contain numbers or special characters.');
+      setLoading(false);
+      return;
+    }
+
     if (formData.lastName.trim().length < 2) {
       setError('Last Name must be at least 2 characters long.');
+      setLoading(false);
+      return;
+    }
+    if (!nameRegex.test(formData.lastName)) {
+      setError('Last Name cannot contain numbers or special characters.');
       setLoading(false);
       return;
     }
