@@ -94,8 +94,8 @@ export default function TransactionsPage() {
   const handleBulkDeleteClick = () => {
     setConfirmModal({
       isOpen: true,
-      title: 'Apagar Transações?',
-      message: `Tem a certeza que deseja apagar ${selectedIds.length} transações? Esta ação é irreversível.`,
+      title: 'Delete Transactions?',
+      message: `Are you sure you want to delete ${selectedIds.length} transactions? This action is irreversible.`,
       action: executeBulkDelete
     });
   };
@@ -109,7 +109,7 @@ export default function TransactionsPage() {
       setSelectedIds([]);
     } catch (err) {
       console.error(err);
-      alert('Erro ao apagar algumas transações.');
+      alert('Error deleting transactions.');
     } finally {
       setIsBulkDeleting(false);
     }
@@ -118,8 +118,8 @@ export default function TransactionsPage() {
   const handleDeleteOneClick = (id: number) => {
     setConfirmModal({
       isOpen: true,
-      title: 'Apagar Transação?',
-      message: 'Tem a certeza que deseja apagar esta transação?',
+      title: 'Delete Transaction?',
+      message: 'Are you sure you want to delete this transaction?',
       action: () => executeDeleteOne(id)
     });
   };
@@ -134,7 +134,7 @@ export default function TransactionsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Erro ao apagar transação.');
+      alert('Error deleting transaction.');
     }
   };
 
@@ -154,11 +154,11 @@ export default function TransactionsPage() {
   };
 
   if (isLoading && !data) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400 animate-pulse font-bold">A carregar transações... 🧾</div>;
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400 animate-pulse font-bold">Loading transactions... 🧾</div>;
   }
 
   if (isError) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-red-500">Erro ao carregar transações.</div>;
+    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-red-500">Error loading transactions.</div>;
   }
 
   return (
@@ -177,7 +177,7 @@ export default function TransactionsPage() {
         onConfirm={confirmModal.action}
         title={confirmModal.title}
         message={confirmModal.message}
-        confirmText="Apagar"
+        confirmText="Delete"
         isDanger={true}
       />
 
@@ -186,13 +186,13 @@ export default function TransactionsPage() {
           
           {/* HEADER */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <h1 className="text-xl md:text-2xl font-heading font-bold text-darkText dark:text-lightText">Extrato de Transações</h1>
+            <h1 className="text-xl md:text-2xl font-heading font-bold text-darkText dark:text-lightText">Transactions</h1>
             <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 whitespace-nowrap ${showFilters ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}
               >
-                🔍 Filtros
+                🔍 Filters
               </button>
               
               <select 
@@ -200,18 +200,17 @@ export default function TransactionsPage() {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 outline-none"
               >
-                <option value="date_desc">Mais Recentes</option>
-                <option value="date_asc">Mais Antigas</option>
-                <option value="amount_desc">Maior Valor</option>
-                <option value="amount_asc">Menor Valor</option>
+                <option value="date_desc">Newest</option>
+                <option value="date_asc">Oldest</option>
+                <option value="amount_desc">Highest Amount</option>
+                <option value="amount_asc">Lowest Amount</option>
               </select>
 
-              {/* BOTÃO NOVA TRANSAÇÃO */}
               <button 
                 onClick={() => router.push('/add')} 
                 className="bg-accent hover:bg-accent/90 text-primary font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-glow whitespace-nowrap"
               >
-                + Nova
+                + New
               </button>
             </div>
           </div>
@@ -221,33 +220,33 @@ export default function TransactionsPage() {
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
               {/* Categoria */}
               <div className="col-span-1">
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Category</label>
                 <select 
                   value={filterCategory} 
                   onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
                 >
-                  <option value="">Todas</option>
+                  <option value="">All</option>
                   {Array.isArray(categories) && categories.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
               </div>
 
               {/* Tipo */}
               <div className="col-span-1">
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tipo</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Type</label>
                 <select 
                   value={filterType} 
                   onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
                 >
-                  <option value="">Todos</option>
+                  <option value="">All</option>
                   {Array.isArray(types) && types.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
 
               {/* Data Início */}
               <div className="col-span-1">
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">De</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">From</label>
                 <input 
                   type="date" 
                   value={startDate} 
@@ -258,7 +257,7 @@ export default function TransactionsPage() {
 
               {/* Data Fim */}
               <div className="col-span-1">
-                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Até</label>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">To</label>
                 <input 
                   type="date" 
                   value={endDate} 
@@ -273,7 +272,7 @@ export default function TransactionsPage() {
                   onClick={clearFilters}
                   className="w-full py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
                 >
-                  Limpar Filtros
+                  Clear Filters
                 </button>
               </div>
             </div>
@@ -282,28 +281,62 @@ export default function TransactionsPage() {
           {/* BARRA DE AÇÕES EM MASSA */}
           {selectedIds.length > 0 && (
             <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 p-3 rounded-xl mb-4 flex justify-between items-center animate-fade-in overflow-x-auto">
-              <span className="text-sm text-blue-800 dark:text-blue-200 font-medium ml-2 whitespace-nowrap">{selectedIds.length} selecionadas</span>
+              <span className="text-sm text-blue-800 dark:text-blue-200 font-medium ml-2 whitespace-nowrap">{selectedIds.length} selected</span>
               <div className="flex gap-2">
-                <button onClick={openBulkEditModal} className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors whitespace-nowrap">✏️ Editar</button>
-                <button onClick={handleBulkDeleteClick} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 whitespace-nowrap">{isBulkDeleting ? 'A apagar...' : '🗑️ Apagar'}</button>
-                <button onClick={() => setSelectedIds([])} className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">Cancelar</button>
+                <button onClick={openBulkEditModal} className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors whitespace-nowrap">✏️ Edit</button>
+                <button onClick={handleBulkDeleteClick} disabled={isBulkDeleting} className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/60 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50 whitespace-nowrap">{isBulkDeleting ? 'Deleting...' : '🗑️ Delete'}</button>
+                <button onClick={() => setSelectedIds([])} className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">Cancel</button>
               </div>
             </div>
           )}
 
-          {/* TABELA */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          {/* --- MOBILE: CARD VIEW (Visível apenas em mobile) --- */}
+          <div className="md:hidden space-y-4">
+            {data?.items.map((tx) => (
+              <div key={tx.id} className={`bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 ${selectedIds.includes(tx.id) ? 'border-blue-500 dark:border-blue-500 ring-1 ring-blue-500' : ''}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelectOne(tx.id)} className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white">{tx.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{tx.date} • {tx.account.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
+                    </p>
+                    {tx.symbol && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">{tx.symbol}</span>}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {tx.category?.name || '-'}
+                    {tx.sub_category && <span className="opacity-70"> › {tx.sub_category.name}</span>}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">✏️</button>
+                    <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {data?.items.length === 0 && <div className="text-center text-gray-400 py-8">No transactions found.</div>}
+          </div>
+
+          {/* --- DESKTOP: TABLE VIEW (Escondido em mobile) --- */}
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[800px]">
                 <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900">
                   <tr>
                     <th className="p-4 w-4"><input type="checkbox" checked={(data?.items?.length ?? 0) > 0 && selectedIds.length === (data?.items?.length ?? 0)} onChange={toggleSelectAll} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></th>
-                    <th className="px-6 py-3 whitespace-nowrap">Data</th>
-                    <th className="px-6 py-3 whitespace-nowrap">Descrição</th>
-                    <th className="px-6 py-3 whitespace-nowrap">Categoria</th>
-                    <th className="px-6 py-3 whitespace-nowrap">Conta</th>
-                    <th className="px-6 py-3 text-right whitespace-nowrap">Valor</th>
-                    <th className="px-6 py-3 text-center whitespace-nowrap">Ações</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Date</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Description</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Category</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Account</th>
+                    <th className="px-6 py-3 text-right whitespace-nowrap">Amount</th>
+                    <th className="px-6 py-3 text-center whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,23 +356,23 @@ export default function TransactionsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">{tx.account.name}</td>
                       <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
                       <td className="px-6 py-4 text-center flex justify-center gap-2 whitespace-nowrap">
-                        <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1" title="Editar">✏️</button>
-                        <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Apagar">🗑️</button>
+                        <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1" title="Edit">✏️</button>
+                        <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Delete">🗑️</button>
                       </td>
                     </tr>
                   ))}
-                  {data?.items.length === 0 && (<tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">Nenhuma transação encontrada.</td></tr>)}
+                  {data?.items.length === 0 && (<tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">No transactions found.</td></tr>)}
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* PAGINAÇÃO */}
-            <div className="flex justify-between items-center p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-              <span className="text-sm text-gray-700 dark:text-gray-300">Página <span className="font-semibold text-gray-900 dark:text-white">{data?.page}</span> de <span className="font-semibold text-gray-900 dark:text-white">{data?.pages}</span></span>
-              <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-                <button onClick={() => setPage(p => (data && p < data.pages ? p + 1 : p))} disabled={!data || page >= data.pages} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
-              </div>
+          {/* PAGINAÇÃO */}
+          <div className="flex justify-between items-center p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
+            <span className="text-sm text-gray-700 dark:text-gray-300">Page <span className="font-semibold text-gray-900 dark:text-white">{data?.page}</span> of <span className="font-semibold text-gray-900 dark:text-white">{data?.pages}</span></span>
+            <div className="flex gap-2">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
+              <button onClick={() => setPage(p => (data && p < data.pages ? p + 1 : p))} disabled={!data || page >= data.pages} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
             </div>
           </div>
         </div>

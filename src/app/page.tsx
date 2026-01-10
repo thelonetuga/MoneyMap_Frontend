@@ -184,7 +184,6 @@ export default function Home() {
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidity (Cash)</span>
-            {/* CORRIGIDO: Fallback para 0 */}
             <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{(portfolio?.total_cash ?? 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
@@ -318,7 +317,60 @@ export default function Home() {
           {/* TABELA DE POSIÇÕES */}
           <div className="lg:col-span-2 bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 overflow-hidden">
             <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Asset Details</h2>
-            <div className="overflow-x-auto">
+            
+            {/* MOBILE: CARD VIEW */}
+            <div className="md:hidden space-y-4">
+              {aggregatedPositions.map((pos, index) => (
+                <div key={`${pos.symbol}-${index}`} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-accent"></span>
+                      <span className="font-bold text-darkText dark:text-lightText">{pos.symbol}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-darkText dark:text-lightText">{pos.total_value.toFixed(2)} €</p>
+                      <p className={`text-xs font-bold ${pos.profit_loss >= 0 ? 'text-success' : 'text-error'}`}>
+                        {pos.profit_loss > 0 ? '+' : ''}{pos.profit_loss.toFixed(2)} €
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <p>Qty: {pos.quantity}</p>
+                      <p>Avg: {pos.avg_buy_price.toFixed(2)} €</p>
+                    </div>
+                    <div className="text-right">
+                      <p>Current: {pos.current_price.toFixed(2)} €</p>
+                      {/* EDIT PRICE BUTTON */}
+                      <button 
+                        onClick={() => startEditing(pos.symbol, pos.current_price)}
+                        className="text-accent hover:underline mt-1 block"
+                      >
+                        Update Price
+                      </button>
+                    </div>
+                  </div>
+                  {/* EDIT MODE (Inline for mobile too) */}
+                  {editingSymbol === pos.symbol && (
+                    <div className="mt-3 flex items-center gap-2 justify-end">
+                      <input 
+                        type="number" 
+                        value={editPrice} 
+                        onChange={(e) => setEditPrice(e.target.value)}
+                        className="w-20 p-1 text-xs border border-accent rounded bg-white dark:bg-gray-800 text-darkText dark:text-lightText"
+                        autoFocus
+                      />
+                      <button onClick={() => handleSavePrice(pos.symbol)} className="text-accent">✓</button>
+                      <button onClick={() => setEditingSymbol(null)} className="text-error">✕</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {aggregatedPositions.length === 0 && <div className="text-center text-muted py-4">No assets found.</div>}
+            </div>
+
+            {/* DESKTOP: TABLE VIEW */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left min-w-[600px]">
                 <thead className="text-xs text-muted uppercase bg-secondary dark:bg-gray-800/50">
                   <tr>
