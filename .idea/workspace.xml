@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="New lading page and change language to english v1.1">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="New lading page and change language to english v1.1" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -96,7 +93,7 @@
       <workItem from="1767997247129" duration="5205000" />
       <workItem from="1768008673975" duration="315000" />
       <workItem from="1768009418158" duration="88000" />
-      <workItem from="1768047776132" duration="3437000" />
+      <workItem from="1768047776132" duration="4148000" />
     </task>
     <task id="LOCAL-00001" summary="reset password">
       <option name="closed" value="true" />
@@ -138,7 +135,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768051085990</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="New lading page and change language to english v1.1">
+      <option name="closed" value="true" />
+      <created>1768051285100</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1768051285100</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -36,8 +36,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // CORRIGIDO: Não fazer logout se o erro 401 vier do próprio login
     if (error.response && error.response.status === 401) {
-      if (typeof window !== 'undefined') {
+      const isLoginRequest = error.config.url?.includes('/auth/token');
+      
+      if (!isLoginRequest && typeof window !== 'undefined') {
         localStorage.removeItem('token');
         window.location.href = '/login';
       }

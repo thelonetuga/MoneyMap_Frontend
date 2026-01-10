@@ -25,7 +25,27 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
-    // Password Validation
+    // 1. Validar Nomes
+    if (formData.firstName.trim().length < 2) {
+      setError('First Name must be at least 2 characters long.');
+      setLoading(false);
+      return;
+    }
+    if (formData.lastName.trim().length < 2) {
+      setError('Last Name must be at least 2 characters long.');
+      setLoading(false);
+      return;
+    }
+
+    // 2. Validar Email (Regex mais robusto)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
+    // 3. Validar Password
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
       setError('Password must have at least 8 characters, 1 uppercase letter, and 1 number.');
@@ -40,7 +60,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // 1. Create User
+      // Create User
       const payload = {
         email: formData.email,
         password: formData.password,
@@ -53,10 +73,10 @@ export default function RegisterPage() {
 
       await registerUser(payload);
 
-      // 2. Auto Login
+      // Auto Login
       const loginData = await loginUser(formData.email, formData.password);
       
-      // 3. Save Token & Redirect
+      // Save Token & Redirect
       login(loginData.access_token);
       router.push('/');
 
