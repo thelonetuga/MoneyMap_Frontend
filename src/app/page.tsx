@@ -125,9 +125,9 @@ export default function Home() {
   const aggregatedPositions = Object.values(aggregatedPositionsMap);
 
   const chartInvest = aggregatedPositions.map(pos => ({ name: pos.symbol, value: pos.total_value }));
-  const totalSpending = spending ? spending.reduce((acc, item) => acc + item.value, 0) : 0;
-  const calculatedTotalInvested = aggregatedPositions.reduce((acc, pos) => acc + pos.total_value, 0);
-  const calculatedNetWorth = (portfolio?.total_cash || 0) + calculatedTotalInvested;
+  const totalSpending = spending ? spending.reduce((acc: number, item: any) => acc + item.value, 0) : 0;
+  const calculatedTotalInvested = aggregatedPositions.reduce((acc: number, pos: PortfolioPosition) => acc + pos.total_value, 0);
+  const calculatedNetWorth = (portfolio?.total_cash ?? 0) + calculatedTotalInvested;
 
   const getRangeLabel = (range: string) => {
     switch(range) {
@@ -166,7 +166,7 @@ export default function Home() {
                 className={`px-3 py-1.5 rounded-lg transition-all font-medium whitespace-nowrap ${
                   timeRange === option.id 
                     ? 'bg-accent text-primary shadow-sm font-bold' 
-                    : 'text-muted hover:bg-secondary dark:hover:bg-gray-800 hover:text-darkText dark:hover:text-lightText'
+                    : 'text-muted hover:bg-secondary dark:bg-gray-800 hover:text-darkText dark:hover:text-lightText'
                 }`}
               >
                 {option.label}
@@ -184,7 +184,8 @@ export default function Home() {
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidity (Cash)</span>
-            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{portfolio?.total_cash.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+            {/* CORRIGIDO: Fallback para 0 */}
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{(portfolio?.total_cash ?? 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Invested</span>
