@@ -175,18 +175,24 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 1. CARTÕES DE RESUMO */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <div className="bg-primary rounded-xl p-6 text-lightText shadow-soft border border-gray-800 relative overflow-hidden group">
+        {/* 1. CARTÕES DE RESUMO (CARROSSEL EM MOBILE) */}
+        <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 mb-8 overflow-x-auto pb-4 md:pb-0 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+          
+          {/* Card 1: Net Worth */}
+          <div className="min-w-[85vw] md:min-w-0 snap-center bg-primary rounded-xl p-6 text-lightText shadow-soft border border-gray-800 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-accent/20"></div>
             <span className="text-accent text-xs font-bold uppercase tracking-wider">Total Net Worth</span>
             <div className="text-3xl font-heading font-bold mt-1 tabular-nums">{calculatedNetWorth.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
-          <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
+
+          {/* Card 2: Liquidity */}
+          <div className="min-w-[85vw] md:min-w-0 snap-center bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidity (Cash)</span>
             <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{(portfolio?.total_cash ?? 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
-          <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
+
+          {/* Card 3: Invested */}
+          <div className="min-w-[85vw] md:min-w-0 snap-center bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Invested</span>
             <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{calculatedTotalInvested.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>

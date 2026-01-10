@@ -1,8 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 
 export default function LandingPage() {
+  const { theme } = useTheme();
+
   return (
     <div className="min-h-screen bg-white dark:bg-primary transition-colors duration-300">
       
@@ -12,19 +15,19 @@ export default function LandingPage() {
         
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-accent uppercase tracking-wider">
-            🚀 The Future of Personal Finance
+            🚀 The Fastest Finance Tracker
           </div>
           <h1 className="text-5xl md:text-7xl font-heading font-bold text-darkText dark:text-white mb-6 leading-tight">
-            Master Your Money <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-500">Like a Pro.</span>
+            Track Money <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-500">In Seconds.</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
-            Stop guessing where your money goes. Track expenses, analyze smart shopping habits, and grow your net worth with MoneyMap.
+            Forget complex spreadsheets and cluttered apps. MoneyMap is designed for speed, simplicity, and clarity.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register" className="px-8 py-4 rounded-xl bg-accent hover:bg-accent/90 text-primary font-bold text-lg shadow-glow transition-all transform hover:scale-105">
-              Get Started Free
+              Start in 1 Minute
             </Link>
             <Link href="/login" className="px-8 py-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-darkText dark:text-white font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
               Login
@@ -37,30 +40,30 @@ export default function LandingPage() {
       <section className="py-20 px-6 bg-secondary/50 dark:bg-gray-900/50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-heading font-bold text-darkText dark:text-white mb-4">Everything you need</h2>
-            <p className="text-gray-500 dark:text-gray-400">Powerful features to take control of your financial life.</p>
+            <h2 className="text-3xl font-heading font-bold text-darkText dark:text-white mb-4">Why MoneyMap?</h2>
+            <p className="text-gray-500 dark:text-gray-400">Built for efficiency. No fluff, just results.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Feature 1 */}
             <div className="p-8 rounded-3xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6">📊</div>
-              <h3 className="text-xl font-bold text-darkText dark:text-white mb-3">Advanced Analytics</h3>
-              <p className="text-gray-500 dark:text-gray-400">Visualize your net worth evolution, spending habits, and cash flow with beautiful interactive charts.</p>
+              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6">⚡</div>
+              <h3 className="text-xl font-bold text-darkText dark:text-white mb-3">Instant Entry</h3>
+              <p className="text-gray-500 dark:text-gray-400">Add transactions with smart defaults and a mobile-first interface designed for one-handed use.</p>
             </div>
 
             {/* Feature 2 */}
             <div className="p-8 rounded-3xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
               <div className="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6">🛒</div>
               <h3 className="text-xl font-bold text-darkText dark:text-white mb-3">Smart Shopping</h3>
-              <p className="text-gray-500 dark:text-gray-400">Track unit prices (kg, liter) and find out if you are really saving money on your groceries.</p>
+              <p className="text-gray-500 dark:text-gray-400">Automatically calculate unit prices (kg/L) to see if you're really saving money on groceries.</p>
             </div>
 
             {/* Feature 3 */}
             <div className="p-8 rounded-3xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6">🤖</div>
-              <h3 className="text-xl font-bold text-darkText dark:text-white mb-3">Automation</h3>
-              <p className="text-gray-500 dark:text-gray-400">Set up recurring transactions and import rules to categorize your expenses automatically.</p>
+              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6">🔄</div>
+              <h3 className="text-xl font-bold text-darkText dark:text-white mb-3">Set & Forget</h3>
+              <p className="text-gray-500 dark:text-gray-400">Automate recurring expenses like rent and subscriptions so you never have to type them again.</p>
             </div>
           </div>
         </div>

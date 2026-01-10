@@ -13,7 +13,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { getEvolution } from '@/services/api'; // CORRIGIDO
+import { getEvolution } from '@/services/api';
 
 type Preset = '6M' | 'YTD' | '1Y' | 'ALL';
 
@@ -63,11 +63,11 @@ export default function EvolutionChart() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+    <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-lg font-bold text-gray-700 dark:text-white whitespace-nowrap">Long Term Analysis</h2>
         
-        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg shrink-0">
+        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg shrink-0 overflow-x-auto max-w-full">
           {[
             { id: '6M', label: '6M' },
             { id: 'YTD', label: 'YTD' },
@@ -91,33 +91,34 @@ export default function EvolutionChart() {
 
       <div className="h-80 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={evolution} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid stroke={gridColor} vertical={false} />
+          <LineChart data={evolution} margin={{ top: 10, right: 0, bottom: 0, left: -20 }}>
+            <CartesianGrid stroke={gridColor} vertical={false} strokeDasharray="3 3" />
             <XAxis 
               dataKey="period" 
-              padding={{ left: 30, right: 30 }} 
-              tick={{ fontSize: 12, fill: axisColor }} 
+              padding={{ left: 20, right: 20 }} 
+              tick={{ fontSize: 10, fill: axisColor }} 
               axisLine={false} 
               tickLine={false} 
+              minTickGap={50} // Mais espaço entre datas
             />
             
             <YAxis 
               yAxisId="left"
-              tick={{ fontSize: 12, fill: '#2563eb' }} 
+              tick={{ fontSize: 10, fill: '#2563eb' }} 
               axisLine={false} 
               tickLine={false} 
               tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-              label={{ value: 'Net Worth', angle: -90, position: 'insideLeft', fill: '#2563eb', fontSize: 10 }}
+              width={40}
             />
 
             <YAxis 
               yAxisId="right" 
               orientation="right"
-              tick={{ fontSize: 12, fill: axisColor }} 
+              tick={{ fontSize: 10, fill: axisColor }} 
               axisLine={false} 
               tickLine={false} 
               tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-              label={{ value: 'Cash Flow', angle: 90, position: 'insideRight', fill: axisColor, fontSize: 10 }}
+              width={40}
             />
 
             <Tooltip 
@@ -126,7 +127,8 @@ export default function EvolutionChart() {
                 border: 'none', 
                 boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                 backgroundColor: tooltipBg,
-                color: tooltipText
+                color: tooltipText,
+                fontSize: '12px'
               }}
               itemStyle={{ color: tooltipText }}
               labelStyle={{ color: tooltipText, fontWeight: 'bold', marginBottom: '0.5rem' }}
@@ -139,12 +141,12 @@ export default function EvolutionChart() {
                 return [`${Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}`, label];
               }}
             />
-            <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ color: axisColor }} />
+            <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: axisColor }} />
             
-            <Line yAxisId="right" type="monotone" dataKey="income" name="Income" stroke="#4ade80" strokeWidth={2} dot={{ r: 3 }} />
-            <Line yAxisId="right" type="monotone" dataKey="expenses" name="Expenses" stroke="#f87171" strokeWidth={2} dot={{ r: 3 }} />
-            <Line yAxisId="left" type="monotone" dataKey="net_worth" name="Net Worth" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} />
-            <Line yAxisId="left" type="monotone" dataKey="liquid_cash" name="Liquidity" stroke="#0ea5e9" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3, fill: '#0ea5e9' }} />
+            <Line yAxisId="right" type="monotone" dataKey="income" name="Income" stroke="#4ade80" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+            <Line yAxisId="right" type="monotone" dataKey="expenses" name="Expenses" stroke="#f87171" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+            <Line yAxisId="left" type="monotone" dataKey="net_worth" name="Net Worth" stroke="#2563eb" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+            <Line yAxisId="left" type="monotone" dataKey="liquid_cash" name="Liquidity" stroke="#0ea5e9" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
