@@ -187,12 +187,20 @@ export interface RecurringTransaction {
   id: number;
   description: string;
   amount: number;
-  frequency: 'monthly' | 'weekly';
+  frequency: 'monthly' | 'weekly' | 'daily' | 'yearly';
   start_date: string;
   next_date: string;
   active: boolean;
   account_name?: string; // Para display
   category_name?: string; // Para display
+}
+
+// NOVO: Regras de Automação
+export interface Rule {
+  id: number;
+  pattern: string;
+  category_id: number;
+  category_name?: string;
 }
 
 // --- 8. RELATÓRIOS ---

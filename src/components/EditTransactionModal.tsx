@@ -9,18 +9,18 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
-  transactionIds: number[]; // Se > 1, é bulk edit
-  initialData?: any; // Para edição individual
+  transactionIds: number[]; // If > 1, it's bulk edit
+  initialData?: any; // For individual edit
 }
 
 const UNITS = [
-  { value: 'un', label: 'Unidade (un)' },
-  { value: 'kg', label: 'Quilograma (kg)' },
-  { value: 'g', label: 'Grama (g)' },
-  { value: 'l', label: 'Litro (l)' },
-  { value: 'ml', label: 'Mililitro (ml)' },
-  { value: 'm', label: 'Metro (m)' },
-  { value: 'pack', label: 'Pack/Emb.' },
+  { value: 'un', label: 'Unit (un)' },
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'l', label: 'Liter (l)' },
+  { value: 'ml', label: 'Milliliter (ml)' },
+  { value: 'm', label: 'Meter (m)' },
+  { value: 'pack', label: 'Pack' },
 ];
 
 export default function EditTransactionModal({ isOpen, onClose, onSave, transactionIds, initialData }: ModalProps) {
@@ -43,7 +43,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
   const isBulk = transactionIds.length > 1;
   const canUsePremiumFeatures = user?.role === 'admin' || user?.role === 'premium';
 
-  // Carregar Dados
+  // Load Data
   useEffect(() => {
     if (isOpen) {
       const loadData = async () => {
@@ -60,7 +60,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             setTags(tagsData);
           }
         } catch (err) {
-          console.error("Erro ao carregar dados do modal:", err);
+          console.error("Error loading modal data:", err);
         }
       };
       loadData();
@@ -101,7 +101,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
 
     if (!isBulk) {
       if (!accountId) {
-        alert('A Conta é obrigatória.');
+        alert('Account is required.');
         setLoading(false);
         return;
       }
@@ -131,7 +131,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
       onClose();
     } catch (err) {
       console.error(err);
-      alert('Erro ao atualizar transações.');
+      alert('Error updating transactions.');
     } finally {
       setLoading(false);
     }
@@ -143,46 +143,46 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-soft w-full max-w-md p-6 border border-secondary dark:border-gray-700 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-heading font-bold text-darkText dark:text-lightText mb-4">
-          {isBulk ? `Editar ${transactionIds.length} Transações` : 'Editar Transação'}
+          {isBulk ? `Edit ${transactionIds.length} Transactions` : 'Edit Transaction'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* DESCRIÇÃO */}
+          {/* DESCRIPTION */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Descrição</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Description</label>
             <input 
               value={description} 
               onChange={e => setDescription(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
-              placeholder={isBulk ? "Manter original (deixe vazio)" : "Descrição"}
+              placeholder={isBulk ? "Keep original (leave empty)" : "Description"}
             />
           </div>
 
-          {/* CONTA */}
+          {/* ACCOUNT */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Conta *</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Account *</label>
             <select 
               value={accountId} 
               onChange={e => setAccountId(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
             >
-              <option value="">{isBulk ? "Manter original" : "Selecionar..."}</option>
+              <option value="">{isBulk ? "Keep original" : "Select..."}</option>
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id}>{acc.name}</option>
               ))}
             </select>
           </div>
 
-          {/* CATEGORIA */}
+          {/* CATEGORY */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Categoria</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Category</label>
             <select 
               value={categoryId} 
               onChange={e => setCategoryId(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
             >
-              <option value="">{isBulk ? "Manter original" : "-- Nenhuma --"}</option>
+              <option value="">{isBulk ? "Keep original" : "-- None --"}</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -216,7 +216,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             </div>
           )}
 
-          {/* SMART SHOPPING (Apenas Premium/Admin) */}
+          {/* SMART SHOPPING (Premium/Admin) */}
           {canUsePremiumFeatures && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10">
               <h3 className="text-xs font-bold text-accent uppercase mb-2 flex items-center gap-1">
@@ -224,7 +224,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantidade</label>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantity</label>
                   <input 
                     type="number"
                     value={quantity} 
@@ -234,7 +234,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unidade</label>
+                  <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unit</label>
                   <select 
                     value={unit} 
                     onChange={e => setUnit(e.target.value)}
@@ -253,14 +253,14 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
               onClick={onClose}
               className="flex-1 py-3 bg-secondary dark:bg-gray-700 text-muted font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button 
               type="submit" 
               disabled={loading}
               className="flex-1 py-3 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-glow disabled:opacity-50"
             >
-              {loading ? 'A guardar...' : 'Guardar'}
+              {loading ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

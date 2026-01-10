@@ -26,14 +26,14 @@ export default function LoginPage() {
       
       if (err.response) {
         if (err.response.status === 403) {
-          setError('A sua conta foi bloqueada. Por favor contacte o administrador.');
+          setError('Your account has been blocked. Please contact the administrator.');
         } else if (err.response.status === 401) {
-          setError('Email ou password incorretos.');
+          setError('Invalid email or password.');
         } else {
-          setError(err.response.data?.detail || 'Ocorreu um erro ao tentar entrar.');
+          setError(err.response.data?.detail || 'An error occurred while trying to log in.');
         }
       } else {
-        setError('Erro de conexão. Verifique a sua internet.');
+        setError('Connection error. Please check your internet.');
       }
       
       setLoading(false);
@@ -45,12 +45,12 @@ export default function LoginPage() {
       <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-heading font-bold text-accent mb-2">MoneyMap</h1>
-          <p className="text-muted">Bem-vindo de volta!</p>
+          <p className="text-muted">Welcome back!</p>
         </div>
 
         {error && (
           <div className={`mb-4 p-3 border text-sm rounded-lg text-center font-medium ${
-            error.includes('bloqueada') 
+            error.includes('blocked') 
               ? 'bg-red-100 border-red-200 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
               : 'bg-error/10 border-error/20 text-error'
           }`}>
@@ -67,7 +67,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="seu@email.com"
+              placeholder="your@email.com"
             />
           </div>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
             <div className="flex justify-between items-center mb-1">
               <label className="block text-xs font-bold text-muted uppercase">Password</label>
               <Link href="/forgot-password" className="text-xs text-accent hover:underline font-medium">
-                Esqueceu-se?
+                Forgot password?
               </Link>
             </div>
             <div className="relative">
@@ -112,12 +112,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-heading font-bold rounded-xl transition-all shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'A entrar...' : 'Entrar'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-muted">
-          Ainda não tens conta? <Link href="/register" className="text-accent hover:underline font-bold">Criar conta</Link>
+          Don't have an account? <Link href="/register" className="text-accent hover:underline font-bold">Sign up</Link>
         </div>
       </div>
     </main>

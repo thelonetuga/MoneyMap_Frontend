@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { resetPassword } from '@/services/api';
 
-// Componente interno que usa useSearchParams
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,7 +18,7 @@ function ResetPasswordForm() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setErrorMsg('Link inválido ou incompleto.');
+      setErrorMsg('Invalid or incomplete link.');
     }
   }, [token]);
 
@@ -28,13 +27,13 @@ function ResetPasswordForm() {
     if (!token) return;
 
     if (password !== confirmPassword) {
-      setErrorMsg('As passwords não coincidem.');
+      setErrorMsg('Passwords do not match.');
       return;
     }
 
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
-      setErrorMsg('A password deve ter pelo menos 8 caracteres, 1 maiúscula e 1 número.');
+      setErrorMsg('Password must have at least 8 characters, 1 uppercase letter, and 1 number.');
       return;
     }
 
@@ -48,7 +47,7 @@ function ResetPasswordForm() {
     } catch (err: any) {
       console.error(err);
       setStatus('error');
-      setErrorMsg(err.response?.data?.detail || 'O link expirou ou é inválido.');
+      setErrorMsg(err.response?.data?.detail || 'The link has expired or is invalid.');
     } finally {
       setLoading(false);
     }
@@ -60,9 +59,9 @@ function ResetPasswordForm() {
         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
           ✅
         </div>
-        <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-2">Password Alterada!</h1>
-        <p className="text-muted">A sua password foi atualizada com sucesso.</p>
-        <p className="text-sm text-muted mt-4">A redirecionar para o login...</p>
+        <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-2">Password Changed!</h1>
+        <p className="text-muted">Your password has been updated successfully.</p>
+        <p className="text-sm text-muted mt-4">Redirecting to login...</p>
       </div>
     );
   }
@@ -70,8 +69,8 @@ function ResetPasswordForm() {
   return (
     <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-heading font-bold text-accent mb-2">Nova Password</h1>
-        <p className="text-muted text-sm">Defina a sua nova password segura.</p>
+        <h1 className="text-2xl font-heading font-bold text-accent mb-2">New Password</h1>
+        <p className="text-muted text-sm">Set your new secure password.</p>
       </div>
 
       {status === 'error' && (
@@ -82,7 +81,7 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-bold text-muted uppercase mb-1">Nova Password</label>
+          <label className="block text-xs font-bold text-muted uppercase mb-1">New Password</label>
           <input 
             type="password" 
             required
@@ -94,7 +93,7 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-muted uppercase mb-1">Confirmar Password</label>
+          <label className="block text-xs font-bold text-muted uppercase mb-1">Confirm Password</label>
           <input 
             type="password" 
             required
@@ -110,18 +109,17 @@ function ResetPasswordForm() {
           disabled={loading || !token}
           className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-heading font-bold rounded-xl transition-all shadow-glow disabled:opacity-50"
         >
-          {loading ? 'A alterar...' : 'Alterar Password'}
+          {loading ? 'Changing...' : 'Change Password'}
         </button>
       </form>
     </div>
   );
 }
 
-// Página Principal com Suspense
 export default function ResetPasswordPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary p-4 transition-colors duration-300">
-      <Suspense fallback={<div className="text-muted animate-pulse">A carregar...</div>}>
+      <Suspense fallback={<div className="text-muted animate-pulse">Loading...</div>}>
         <ResetPasswordForm />
       </Suspense>
     </main>

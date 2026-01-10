@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { getAdminUsers, updateUserRole, getAdminStats, updateUserStatus, deleteUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import ConfirmationModal from '@/components/ConfirmationModal'; // IMPORTADO
+import ConfirmationModal from '@/components/ConfirmationModal';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -13,11 +13,11 @@ export default function AdminPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
 
-  // Estado para Modal de Confirmação
+  // Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
-  // Verificar se é admin
+  // Check Admin
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
       router.push('/');
@@ -37,33 +37,30 @@ export default function AdminPage() {
     enabled: user?.role === 'admin',
   });
 
-  // Mutation para mudar role
+  // Mutations
   const roleMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: string }) => updateUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      alert('Role atualizada com sucesso!');
+      alert('Role updated successfully!');
     },
-    onError: () => alert('Erro ao atualizar role.'),
+    onError: () => alert('Error updating role.'),
   });
 
-  // Mutation para mudar status (Bloquear/Desbloquear)
   const statusMutation = useMutation({
     mutationFn: ({ userId, isActive }: { userId: number; isActive: boolean }) => updateUserStatus(userId, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
-    onError: () => alert('Erro ao atualizar estado.'),
+    onError: () => alert('Error updating status.'),
   });
 
-  // Mutation para apagar utilizador
   const deleteMutation = useMutation({
     mutationFn: (userId: number) => deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      // alert('Utilizador apagado com sucesso.'); // Opcional, o modal fecha
     },
-    onError: () => alert('Erro ao apagar utilizador.'),
+    onError: () => alert('Error deleting user.'),
   });
 
   const handleDeleteClick = (id: number) => {
@@ -78,7 +75,7 @@ export default function AdminPage() {
   };
 
   if (authLoading || (usersLoading && !usersData)) {
-    return <div className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">A carregar painel de admin... 🛡️</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">Loading Admin Panel... 🛡️</div>;
   }
 
   if (user?.role !== 'admin') return null;
@@ -90,31 +87,31 @@ export default function AdminPage() {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Apagar Utilizador?"
-        message="Esta ação é irreversível. Todas as contas, transações e dados deste utilizador serão apagados permanentemente."
-        confirmText="Sim, Apagar"
+        title="Delete User?"
+        message="This action is irreversible. All accounts, transactions, and data for this user will be permanently deleted."
+        confirmText="Yes, Delete"
         isDanger={true}
       />
 
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">Painel de Administração 🛡️</h1>
+        <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">Admin Panel 🛡️</h1>
 
-        {/* ESTATÍSTICAS */}
+        {/* STATS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-700">
-            <span className="text-muted text-xs font-bold uppercase tracking-wider">Utilizadores Totais</span>
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">Total Users</span>
             <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_users || '-'}</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-700">
-            <span className="text-muted text-xs font-bold uppercase tracking-wider">Transações Totais</span>
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">Total Transactions</span>
             <div className="text-3xl font-heading font-bold text-darkText dark:text-lightText mt-2 tabular-nums">{statsData?.total_transactions || '-'}</div>
           </div>
         </div>
 
-        {/* TABELA DE UTILIZADORES */}
+        {/* USERS TABLE */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-soft border border-secondary dark:border-gray-700 overflow-hidden">
           <div className="p-6 border-b border-secondary dark:border-gray-700">
-            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Gestão de Utilizadores</h2>
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">User Management</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-muted">
@@ -123,8 +120,8 @@ export default function AdminPage() {
                   <th className="px-6 py-3">ID</th>
                   <th className="px-6 py-3">Email</th>
                   <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Estado</th>
-                  <th className="px-6 py-3">Ações</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,7 +135,7 @@ export default function AdminPage() {
                         onChange={(e) => roleMutation.mutate({ userId: u.id, role: e.target.value })}
                         className="bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-darkText dark:text-lightText text-xs rounded-lg focus:ring-accent focus:border-accent block p-2 outline-none"
                       >
-                        <option value="basic">Básico</option>
+                        <option value="basic">Basic</option>
                         <option value="premium">Premium</option>
                         <option value="admin">Admin</option>
                       </select>
@@ -152,14 +149,14 @@ export default function AdminPage() {
                             : 'bg-error/10 text-error hover:bg-error/20'
                         }`}
                       >
-                        {u.is_active ? 'Ativo' : 'Bloqueado'}
+                        {u.is_active ? 'Active' : 'Blocked'}
                       </button>
                     </td>
                     <td className="px-6 py-4">
                       <button 
                         onClick={() => handleDeleteClick(u.id)}
                         className="text-muted hover:text-error transition-colors p-1"
-                        title="Apagar Utilizador"
+                        title="Delete User"
                       >
                         🗑️
                       </button>
@@ -170,12 +167,12 @@ export default function AdminPage() {
             </table>
           </div>
           
-          {/* PAGINAÇÃO */}
+          {/* PAGINATION */}
           <div className="flex justify-between items-center p-4 border-t border-secondary dark:border-gray-700 bg-secondary dark:bg-gray-900">
-            <span className="text-sm text-muted">Página <span className="font-bold text-darkText dark:text-lightText">{usersData?.page}</span> de <span className="font-bold text-darkText dark:text-lightText">{usersData?.pages}</span></span>
+            <span className="text-sm text-muted">Page <span className="font-bold text-darkText dark:text-lightText">{usersData?.page}</span> of <span className="font-bold text-darkText dark:text-lightText">{usersData?.pages}</span></span>
             <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Anterior</button>
-              <button onClick={() => setPage(p => p + 1)} disabled={page >= (usersData?.pages || 1)} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Próxima</button>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Prev</button>
+              <button onClick={() => setPage(p => p + 1)} disabled={page >= (usersData?.pages || 1)} className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded hover:bg-secondary dark:hover:bg-gray-700 disabled:opacity-50 text-darkText dark:text-lightText">Next</button>
             </div>
           </div>
         </div>

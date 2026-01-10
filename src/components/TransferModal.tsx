@@ -18,9 +18,9 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
   const [destId, setDestId] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState('Transferência');
+  const [description, setDescription] = useState('Transfer');
 
-  // Carregar Contas
+  // Load Accounts
   useEffect(() => {
     if (isOpen) {
       api.get('/accounts/').then(res => setAccounts(res.data)).catch(console.error);
@@ -29,7 +29,7 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
       setDestId('');
       setAmount('');
       setDate(new Date().toISOString().split('T')[0]);
-      setDescription('Transferência');
+      setDescription('Transfer');
     }
   }, [isOpen]);
 
@@ -38,19 +38,19 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
     setLoading(true);
 
     if (!sourceId || !destId || !amount) {
-      alert('Preencha todos os campos obrigatórios.');
+      alert('Please fill all required fields.');
       setLoading(false);
       return;
     }
 
     if (sourceId === destId) {
-      alert('A conta de origem e destino não podem ser a mesma.');
+      alert('Source and Destination accounts cannot be the same.');
       setLoading(false);
       return;
     }
 
     if (Number(amount) <= 0) {
-      alert('O valor deve ser positivo.');
+      alert('Amount must be positive.');
       setLoading(false);
       return;
     }
@@ -64,12 +64,12 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
         description
       });
       
-      alert('Transferência realizada com sucesso! 💸');
+      alert('Transfer successful! 💸');
       onSuccess();
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.detail || 'Erro ao realizar transferência.');
+      alert(err.response?.data?.detail || 'Error processing transfer.');
     } finally {
       setLoading(false);
     }
@@ -81,21 +81,21 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-soft w-full max-w-md p-6 border border-secondary dark:border-gray-700">
         <h2 className="text-xl font-heading font-bold text-darkText dark:text-lightText mb-6 flex items-center gap-2">
-          💸 Transferir Fundos
+          💸 Transfer Funds
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* CONTA ORIGEM */}
+          {/* SOURCE */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">De (Origem)</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">From (Source)</label>
             <select 
               value={sourceId} 
               onChange={e => setSourceId(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
               required
             >
-              <option value="">Selecionar conta...</option>
+              <option value="">Select account...</option>
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id} disabled={String(acc.id) === destId}>
                   {acc.name} ({acc.current_balance.toFixed(2)} €)
@@ -104,16 +104,16 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
             </select>
           </div>
 
-          {/* CONTA DESTINO */}
+          {/* DESTINATION */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Para (Destino)</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">To (Destination)</label>
             <select 
               value={destId} 
               onChange={e => setDestId(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
               required
             >
-              <option value="">Selecionar conta...</option>
+              <option value="">Select account...</option>
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id} disabled={String(acc.id) === sourceId}>
                   {acc.name} ({acc.current_balance.toFixed(2)} €)
@@ -122,10 +122,10 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
             </select>
           </div>
 
-          {/* VALOR E DATA */}
+          {/* AMOUNT & DATE */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Valor (€)</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Amount (€)</label>
               <input 
                 type="number" 
                 step="0.01"
@@ -137,7 +137,7 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Data</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Date</label>
               <input 
                 type="date" 
                 value={date} 
@@ -148,14 +148,14 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
             </div>
           </div>
 
-          {/* DESCRIÇÃO */}
+          {/* DESCRIPTION */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Descrição</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Description</label>
             <input 
               value={description} 
               onChange={e => setDescription(e.target.value)}
               className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
-              placeholder="Motivo da transferência"
+              placeholder="Reason"
             />
           </div>
 
@@ -165,14 +165,14 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
               onClick={onClose}
               className="flex-1 py-3 bg-secondary dark:bg-gray-700 text-muted font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button 
               type="submit" 
               disabled={loading}
               className="flex-1 py-3 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-glow disabled:opacity-50"
             >
-              {loading ? 'A processar...' : 'Confirmar'}
+              {loading ? 'Processing...' : 'Confirm'}
             </button>
           </div>
         </form>

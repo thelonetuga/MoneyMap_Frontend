@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { registerUser, loginUser } from '@/services/api'; // Usar helpers
+import { registerUser, loginUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
@@ -25,22 +25,22 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
 
-    // Validação de Password
+    // Password Validation
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
-      setError('A password deve ter pelo menos 8 caracteres, 1 maiúscula e 1 número.');
+      setError('Password must have at least 8 characters, 1 uppercase letter, and 1 number.');
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('As passwords não coincidem.');
+      setError('Passwords do not match.');
       setLoading(false);
       return;
     }
 
     try {
-      // 1. Criar Utilizador (Usando helper)
+      // 1. Create User
       const payload = {
         email: formData.email,
         password: formData.password,
@@ -53,16 +53,16 @@ export default function RegisterPage() {
 
       await registerUser(payload);
 
-      // 2. Fazer Login Automático (Usando helper)
+      // 2. Auto Login
       const loginData = await loginUser(formData.email, formData.password);
       
-      // 3. Guardar Token e Redirecionar
+      // 3. Save Token & Redirect
       login(loginData.access_token);
       router.push('/');
 
     } catch (err: any) {
       console.error(err);
-      const msg = err.response?.data?.detail || 'Ocorreu um erro ao criar conta.';
+      const msg = err.response?.data?.detail || 'An error occurred while creating account.';
       setError(msg);
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function RegisterPage() {
     <main className="min-h-screen flex items-center justify-center bg-secondary dark:bg-primary p-4 transition-colors duration-300">
       <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-heading font-bold text-accent mb-2">Junta-te ao MoneyMap</h1>
-          <p className="text-muted">Cria a tua conta personalizada.</p>
+          <h1 className="text-3xl font-heading font-bold text-accent mb-2">Join MoneyMap</h1>
+          <p className="text-muted">Create your personalized account.</p>
         </div>
 
         {error && (
@@ -88,24 +88,24 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* NOME COMPLETO */}
+          {/* FULL NAME */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Nome</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">First Name</label>
               <input 
                 name="firstName" required
                 value={formData.firstName} onChange={handleChange}
                 className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-                placeholder="João"
+                placeholder="John"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Apelido</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Last Name</label>
               <input 
                 name="lastName" required
                 value={formData.lastName} onChange={handleChange}
                 className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-                placeholder="Silva"
+                placeholder="Doe"
               />
             </div>
           </div>
@@ -117,21 +117,21 @@ export default function RegisterPage() {
               name="email" type="email" required
               value={formData.email} onChange={handleChange}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="seu@email.com"
+              placeholder="your@email.com"
             />
           </div>
 
-          {/* MOEDA */}
+          {/* CURRENCY */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Moeda Principal</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Main Currency</label>
             <select 
               name="currency" 
               value={formData.currency} onChange={handleChange}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
             >
               <option value="EUR">Euro (€)</option>
-              <option value="USD">Dólar ($)</option>
-              <option value="GBP">Libra (£)</option>
+              <option value="USD">Dollar ($)</option>
+              <option value="GBP">Pound (£)</option>
             </select>
           </div>
 
@@ -142,13 +142,13 @@ export default function RegisterPage() {
               name="password" type="password" required
               value={formData.password} onChange={handleChange}
               className="w-full p-3 bg-secondary dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText transition-all"
-              placeholder="Mín. 8 chars, 1 Maiúscula, 1 Número"
+              placeholder="Min. 8 chars, 1 Uppercase, 1 Number"
             />
           </div>
 
-          {/* CONFIRMAR PASSWORD */}
+          {/* CONFIRM PASSWORD */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Confirmar Password</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Confirm Password</label>
             <input 
               name="confirmPassword" type="password" required
               value={formData.confirmPassword} onChange={handleChange}
@@ -157,10 +157,10 @@ export default function RegisterPage() {
                   ? 'border-error focus:ring-error' 
                   : 'border-gray-200 dark:border-gray-600 focus:ring-accent'
               }`}
-              placeholder="Repetir password"
+              placeholder="Repeat password"
             />
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-              <p className="text-xs text-error mt-1">As passwords não coincidem.</p>
+              <p className="text-xs text-error mt-1">Passwords do not match.</p>
             )}
           </div>
 
@@ -169,12 +169,12 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-heading font-bold rounded-xl transition-all shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'A criar conta...' : 'Criar Conta'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-muted">
-          Já tem conta? <Link href="/login" className="text-accent hover:underline font-bold">Entrar</Link>
+          Already have an account? <Link href="/login" className="text-accent hover:underline font-bold">Login</Link>
         </div>
       </div>
     </main>

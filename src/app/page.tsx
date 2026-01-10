@@ -10,6 +10,7 @@ import {
 import { getPortfolio, getHistory, getSpending, updateManualPrice } from '@/services/api'; 
 import EvolutionChart from '../components/EvolutionChart';
 import SmartShoppingWidget from '../components/SmartShoppingWidget';
+import LandingPage from '../components/LandingPage';
 import { PortfolioPosition } from '@/types/models'; 
 import { useAuth } from '@/context/AuthContext';
 
@@ -19,7 +20,7 @@ const COLORS_SPEND = ['#FF8042', '#FFBB28', '#FF6B6B', '#D94848', '#993333'];
 
 export default function Home() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('30d');
   
@@ -30,8 +31,7 @@ export default function Home() {
 
   // Verificar autenticação (simples)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { router.push('/login'); }
+    // Removido redirecionamento forçado para suportar Landing Page
   }, [router]);
 
   // --- QUERIES (TanStack Query) ---
@@ -39,17 +39,25 @@ export default function Home() {
   const { data: portfolio, isLoading: loadingPortfolio, isError: errorPortfolio } = useQuery({
     queryKey: ['portfolio'],
     queryFn: getPortfolio,
+    enabled: !!user, // Só faz o fetch se houver user
   });
 
   const { data: history, isLoading: loadingHistory } = useQuery({
     queryKey: ['history', timeRange],
     queryFn: () => getHistory(timeRange),
+    enabled: !!user,
   });
 
   const { data: spending, isLoading: loadingSpending } = useQuery({
     queryKey: ['spending', timeRange],
     queryFn: () => getSpending(timeRange),
+    enabled: !!user,
   });
+
+  // --- LÓGICA DE RENDERIZAÇÃO CONDICIONAL ---
+  if (!authLoading && !user) {
+    return <LandingPage />;
+  }
 
   // --- FUNÇÃO PARA SALVAR PREÇO MANUAL ---
   const handleSavePrice = async (symbol: string) => {
@@ -58,14 +66,13 @@ export default function Home() {
     setSavingPrice(true);
     try {
       await updateManualPrice(symbol, Number(editPrice));
-      // Invalida cache para recarregar
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       await queryClient.invalidateQueries({ queryKey: ['evolution'] });
       setEditingSymbol(null);
       setEditPrice('');
     } catch (error) {
-      console.error("Erro ao salvar preço:", error);
-      alert("Erro ao atualizar preço. Tente novamente.");
+      console.error("Error saving price:", error);
+      alert("Error updating price. Please try again.");
     } finally {
       setSavingPrice(false);
     }
@@ -77,59 +84,60 @@ export default function Home() {
   };
 
   // Loading State Global
-  if (loadingPortfolio) {
+  if (authLoading || (user && loadingPortfolio)) {
     return (
       <div className="flex h-screen items-center justify-center bg-secondary dark:bg-primary text-muted font-heading font-bold animate-pulse">
-        A carregar o seu império... 🏰
+        Loading your empire... 🏰
       </div>
     );
   }
 
   // Se der erro no portfolio
-  if (errorPortfolio || !portfolio) {
+  if (user && (errorPortfolio || !portfolio)) {
     return (
       <div className="flex h-screen items-center justify-center bg-secondary dark:bg-primary text-error font-heading font-bold">
-        Erro ao carregar dados. Tente fazer login novamente.
+        Error loading data. Please try logging in again.
       </div>
     );
   }
 
-  // --- AGREGAÇÃO DE POSIÇÕES (FRONTEND FIX) ---
-  const aggregatedPositions = Object.values(
-    portfolio.positions.reduce((acc, pos) => {
-      if (!acc[pos.symbol]) {
-        acc[pos.symbol] = { ...pos };
-      } else {
-        const existing = acc[pos.symbol];
-        const totalCostExisting = existing.quantity * existing.avg_buy_price;
-        const totalCostNew = pos.quantity * pos.avg_buy_price;
-        
-        existing.quantity += pos.quantity;
-        existing.total_value += pos.total_value;
-        existing.profit_loss += pos.profit_loss;
-        
-        if (existing.quantity > 0) {
-          existing.avg_buy_price = (totalCostExisting + totalCostNew) / existing.quantity;
-        }
+  // --- AGREGAÇÃO DE POSIÇÕES (CORRIGIDO) ---
+  const positions = portfolio?.positions || [];
+  const aggregatedPositionsMap = positions.reduce((acc, pos) => {
+    if (!acc[pos.symbol]) {
+      acc[pos.symbol] = { ...pos };
+    } else {
+      const existing = acc[pos.symbol];
+      const totalCostExisting = existing.quantity * existing.avg_buy_price;
+      const totalCostNew = pos.quantity * pos.avg_buy_price;
+      
+      existing.quantity += pos.quantity;
+      existing.total_value += pos.total_value;
+      existing.profit_loss += pos.profit_loss;
+      
+      if (existing.quantity > 0) {
+        existing.avg_buy_price = (totalCostExisting + totalCostNew) / existing.quantity;
       }
-      return acc;
-    }, {} as Record<string, PortfolioPosition>)
-  );
+    }
+    return acc;
+  }, {} as Record<string, PortfolioPosition>);
+
+  const aggregatedPositions = Object.values(aggregatedPositionsMap);
 
   const chartInvest = aggregatedPositions.map(pos => ({ name: pos.symbol, value: pos.total_value }));
   const totalSpending = spending ? spending.reduce((acc, item) => acc + item.value, 0) : 0;
   const calculatedTotalInvested = aggregatedPositions.reduce((acc, pos) => acc + pos.total_value, 0);
-  const calculatedNetWorth = portfolio.total_cash + calculatedTotalInvested;
+  const calculatedNetWorth = (portfolio?.total_cash || 0) + calculatedTotalInvested;
 
   const getRangeLabel = (range: string) => {
     switch(range) {
-      case '7d': return 'Últimos 7 Dias';
-      case '30d': return 'Últimos 30 Dias';
-      case '90d': return 'Últimos 3 Meses';
-      case 'ytd': return 'Este Ano (YTD)';
-      case '1y': return 'Último Ano';
-      case 'all': return 'Todo o Histórico';
-      default: return 'Período';
+      case '7d': return 'Last 7 Days';
+      case '30d': return 'Last 30 Days';
+      case '90d': return 'Last 3 Months';
+      case 'ytd': return 'Year to Date (YTD)';
+      case '1y': return 'Last Year';
+      case 'all': return 'All Time';
+      default: return 'Period';
     }
   };
 
@@ -141,7 +149,7 @@ export default function Home() {
         
         {/* HEADER COM FILTRO DE DATA */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h1 className="text-xl md:text-2xl font-heading font-bold text-darkText dark:text-lightText">Dashboard Financeiro</h1>
+          <h1 className="text-xl md:text-2xl font-heading font-bold text-darkText dark:text-lightText">Financial Dashboard</h1>
           
           <div className="bg-white dark:bg-primary p-1 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex text-xs md:text-sm overflow-x-auto max-w-full">
             {[
@@ -149,8 +157,8 @@ export default function Home() {
               { id: '30d', label: '30D' },
               { id: '90d', label: '3M' },
               { id: 'ytd', label: 'YTD' },
-              { id: '1y', label: '1A' },
-              { id: 'all', label: 'Tudo' },
+              { id: '1y', label: '1Y' },
+              { id: 'all', label: 'All' },
             ].map((option) => (
               <button
                 key={option.id}
@@ -171,15 +179,15 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <div className="bg-primary rounded-xl p-6 text-lightText shadow-soft border border-gray-800 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-accent/20"></div>
-            <span className="text-accent text-xs font-bold uppercase tracking-wider">Património Total</span>
+            <span className="text-accent text-xs font-bold uppercase tracking-wider">Total Net Worth</span>
             <div className="text-3xl font-heading font-bold mt-1 tabular-nums">{calculatedNetWorth.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
-            <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidez (Bancos)</span>
-            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{portfolio.total_cash.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidity (Cash)</span>
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{portfolio?.total_cash.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
           <div className="bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
-            <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Investido</span>
+            <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Invested</span>
             <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{calculatedTotalInvested.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
           </div>
         </div>
@@ -188,16 +196,15 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
           {/* GRÁFICO DE ÁREA (Evolução) */}
-          {/* CORREÇÃO: min-w-0 no cartão pai */}
           <div className="lg:col-span-2 bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 min-w-0">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Evolução Patrimonial</h2>
+              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Wealth Evolution</h2>
               <span className="text-xs font-medium text-muted bg-secondary dark:bg-gray-800 px-2 py-1 rounded-lg">{getRangeLabel(timeRange)}</span>
             </div>
             
-            <div className="h-64 md:h-72 w-full">
+            <div className="h-64 md:h-72 w-full min-w-0">
               {loadingHistory ? (
-                <div className="h-full flex items-center justify-center text-muted animate-pulse">A carregar gráfico...</div>
+                <div className="h-full flex items-center justify-center text-muted animate-pulse">Loading chart...</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={Array.isArray(history) ? history : []}>
@@ -222,7 +229,7 @@ export default function Home() {
                     <YAxis hide={true} domain={['auto', 'auto']} />
                     <Tooltip 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', backgroundColor: 'var(--tooltip-bg, #fff)' }} 
-                      formatter={(value: any) => [Number(value).toFixed(2) + ' €', 'Património']} 
+                      formatter={(value: any) => [Number(value).toFixed(2) + ' €', 'Net Worth']} 
                     />
                     <Area type="monotone" dataKey="value" stroke="#00DC82" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                   </AreaChart>
@@ -232,10 +239,9 @@ export default function Home() {
           </div>
 
           {/* GRÁFICO DE DESPESAS */}
-          {/* CORREÇÃO: min-w-0 no cartão pai */}
           <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col min-w-0">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Despesas</h2>
+              <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText">Expenses</h2>
               <div className="flex flex-col items-end">
                 <span className="text-xs font-medium text-muted mb-1">{getRangeLabel(timeRange)}</span>
                 <span className="text-xs bg-error/10 text-error font-bold px-2 py-1 rounded-full">
@@ -245,9 +251,9 @@ export default function Home() {
             </div>
 
             {loadingSpending ? (
-               <div className="flex-1 flex items-center justify-center text-muted animate-pulse">A carregar...</div>
+               <div className="flex-1 flex items-center justify-center text-muted animate-pulse">Loading...</div>
             ) : (spending && spending.length > 0) ? (
-              <div className="flex-1 min-h-[250px]">
+              <div className="flex-1 min-h-[250px] min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={spending} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -262,8 +268,8 @@ export default function Home() {
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted text-sm italic text-center p-4">
-                Sem despesas neste período.<br />
-                Tente selecionar outro intervalo! 📅
+                No expenses in this period.<br />
+                Try selecting another range! 📅
               </div>
             )}
           </div>
@@ -285,9 +291,8 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* GRÁFICO INVESTIMENTOS */}
-          {/* CORREÇÃO: min-w-0 no cartão pai */}
           <div className="bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 min-w-0">
-            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Portfólio</h2>
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Portfolio</h2>
             {chartInvest.length > 0 ? (
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -304,24 +309,24 @@ export default function Home() {
               </div>
             ) : (
               <div className="h-64 flex items-center justify-center text-muted text-sm italic">
-                Sem investimentos ativos.
+                No active investments.
               </div>
             )}
           </div>
 
           {/* TABELA DE POSIÇÕES */}
           <div className="lg:col-span-2 bg-white dark:bg-primary p-4 md:p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 overflow-hidden">
-            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Detalhe dos Ativos</h2>
+            <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText mb-4">Asset Details</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left min-w-[600px]">
                 <thead className="text-xs text-muted uppercase bg-secondary dark:bg-gray-800/50">
                   <tr>
-                    <th className="px-4 py-3 rounded-l-lg whitespace-nowrap">Ativo</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Qtd</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Preço Médio</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Preço Atual</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Valor Total</th>
-                    <th className="px-4 py-3 text-right rounded-r-lg whitespace-nowrap">Lucro/Prejuízo</th>
+                    <th className="px-4 py-3 rounded-l-lg whitespace-nowrap">Asset</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Qty</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Avg Price</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Current Price</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Total Value</th>
+                    <th className="px-4 py-3 text-right rounded-r-lg whitespace-nowrap">P/L</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -374,7 +379,7 @@ export default function Home() {
                     </tr>
                   ))}
                   {aggregatedPositions.length === 0 && (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted">Ainda não tem investimentos. Vá a "Adicionar" para começar! 🚀</td></tr>
+                    <tr><td colSpan={6} className="p-8 text-center text-muted">No investments yet. Go to "New" to start! 🚀</td></tr>
                   )}
                 </tbody>
               </table>

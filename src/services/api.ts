@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary, Tag, RecurringTransaction } from '@/types/models';
+import { HistoryPoint, SpendingItem, PortfolioResponse, EvolutionPoint, PaginatedResponse, TransactionResponse, TransactionQueryParams, UserResponse, SmartShoppingAnalysis, SmartShoppingSummary, Tag, RecurringTransaction, Rule } from '@/types/models';
 
 // Lógica para Runtime Environment Variables (Docker/TrueNAS)
 const getBaseUrl = () => {
@@ -198,13 +198,6 @@ export const deleteRecurringTransaction = async (id: number): Promise<void> => {
 };
 
 // --- SERVIÇOS DE REGRAS (AUTOMATION) ---
-export interface Rule {
-  id: number;
-  pattern: string;
-  category_id: number;
-  category_name?: string;
-}
-
 export const getRules = async (): Promise<Rule[]> => {
   const response = await api.get('/rules/');
   return response.data as Rule[];

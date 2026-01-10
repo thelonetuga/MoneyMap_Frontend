@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import api, { createTransaction, transferFunds, getSmartShoppingAnalysis, getTags, createRecurringTransaction } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { SmartShoppingAnalysis, Tag } from '@/types/models';
+import Link from 'next/link';
 
 interface Option {
   id: number;
@@ -33,23 +34,23 @@ interface Category extends Option {
 }
 
 const UNITS = [
-  { value: 'un', label: 'Unidade (un)' },
-  { value: 'kg', label: 'Quilograma (kg)' },
-  { value: 'g', label: 'Grama (g)' },
-  { value: 'l', label: 'Litro (l)' },
-  { value: 'ml', label: 'Mililitro (ml)' },
-  { value: 'm', label: 'Metro (m)' },
-  { value: 'pack', label: 'Pack/Emb.' },
+  { value: 'un', label: 'Unit (un)' },
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'l', label: 'Liter (l)' },
+  { value: 'ml', label: 'Milliliter (ml)' },
+  { value: 'm', label: 'Meter (m)' },
+  { value: 'pack', label: 'Pack' },
 ];
 
 export default function AddTransaction() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Iniciar como true
   const [error, setError] = useState('');
   
-  // MODO: 'transaction' ou 'transfer'
+  // MODE: 'transaction' or 'transfer'
   const [mode, setMode] = useState<'transaction' | 'transfer'>('transaction');
 
   // Dropdowns
@@ -58,7 +59,7 @@ export default function AddTransaction() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
 
-  // Form Transação
+  // Form Transaction
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -71,31 +72,31 @@ export default function AddTransaction() {
     quantity: '',
     measurement_unit: 'un',
     price_per_unit: '',
-    // Recorrência
+    // Recurring
     is_recurring: false,
     frequency: 'monthly',
     // Tags
     tag_ids: [] as number[]
   });
 
-  // Form Transferência
+  // Form Transfer
   const [transferData, setTransferData] = useState({
     source_account_id: '',
     destination_account_id: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
-    description: 'Transferência'
+    description: 'Transfer'
   });
 
   // Smart Shopping State
   const [analysis, setAnalysis] = useState<SmartShoppingAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
-  // Carregar dados
+  // Load Data
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        // CORRIGIDO: Promise.all com tipos mistos
         const [typesRes, accountsRes, catsRes] = await Promise.all([
           api.get('/lookups/transaction-types/'),
           api.get('/accounts/'),
@@ -106,31 +107,33 @@ export default function AddTransaction() {
         setAccounts(accountsRes.data);
         setCategories(catsRes.data);
 
-        // Carregar Tags separadamente se for premium
+        // Load Tags separately if premium
         try {
             const tagsData = await getTags();
             setTags(tagsData);
         } catch (e) {
-            console.warn("Não foi possível carregar tags (talvez não seja premium)");
+            // Ignore if not premium
         }
 
-        // Defaults Transação
+        // Defaults Transaction
         if (typesRes.data.length > 0) setFormData(prev => ({ ...prev, transaction_type_id: String(typesRes.data[0].id) }));
         if (accountsRes.data.length > 0) setFormData(prev => ({ ...prev, account_id: String(accountsRes.data[0].id) }));
         
-        // Defaults Transferência
+        // Defaults Transfer
         if (accountsRes.data.length > 0) {
             setTransferData(prev => ({ ...prev, source_account_id: String(accountsRes.data[0].id) }));
         }
 
       } catch (err) {
-        setError("Não foi possível carregar os dados. Verifica a conexão.");
+        setError("Could not load data. Check connection.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  // --- LÓGICA DE FILTRAGEM (Transação) ---
+  // --- FILTER LOGIC (Transaction) ---
   const selectedAccount = accounts.find(a => a.id === Number(formData.account_id));
   const isInvestmentAccount = selectedAccount?.account_type?.name.toLowerCase().includes('investimento');
 
@@ -150,7 +153,7 @@ export default function AddTransaction() {
 
   const formatTypeName = (name: string) => name.replace(' de Ativo', '').replace(' de Ações', '');
 
-  // --- LÓGICA DE UI (Transação) ---
+  // --- UI LOGIC (Transaction) ---
   const selectedType = types.find(t => t.id === Number(formData.transaction_type_id));
   const isInvestmentType = selectedType?.is_investment || false;
   const isExpense = selectedType?.name.toLowerCase().includes('despesa') || selectedType?.name.toLowerCase().includes('expense');
@@ -163,7 +166,7 @@ export default function AddTransaction() {
   // Handlers
   const handleAnalysis = async () => {
     if (!formData.description || !formData.amount || !formData.quantity) {
-      setError('Preenche a Descrição, Valor e Quantidade para analisar.');
+      setError('Fill Description, Amount and Quantity to analyze.');
       return;
     }
     setAnalysisLoading(true);
@@ -174,7 +177,7 @@ export default function AddTransaction() {
       const data = await getSmartShoppingAnalysis(formData.description, unitPrice, formData.measurement_unit);
       setAnalysis(data);
     } catch (err) {
-      setError('Não foi possível analisar o preço.');
+      setError('Could not analyze price.');
     } finally {
       setAnalysisLoading(false);
     }
@@ -194,7 +197,7 @@ export default function AddTransaction() {
     setLoading(true);
     setError('');
 
-    if (!formData.account_id) { setError('Por favor, selecione uma Conta.'); setLoading(false); return; }
+    if (!formData.account_id) { setError('Please select an Account.'); setLoading(false); return; }
     
     const payload: any = {
       description: formData.description,
@@ -209,7 +212,7 @@ export default function AddTransaction() {
     if (formData.sub_category_id) payload.sub_category_id = Number(formData.sub_category_id);
     
     if (isInvestmentType) {
-      if (!formData.symbol || !formData.quantity) { setError('Para investimentos, preenche o Símbolo e a Quantidade.'); setLoading(false); return; }
+      if (!formData.symbol || !formData.quantity) { setError('For investments, fill Ticker and Quantity.'); setLoading(false); return; }
       payload.symbol = String(formData.symbol).toUpperCase(); 
       payload.quantity = Number(formData.quantity);
       if (formData.price_per_unit) payload.price_per_unit = Number(formData.price_per_unit);
@@ -220,19 +223,17 @@ export default function AddTransaction() {
 
     try {
       if (formData.is_recurring && canUsePremiumFeatures) {
-        // Criar Recorrência
         await createRecurringTransaction({
           ...payload,
           frequency: formData.frequency,
           start_date: formData.date
         });
       } else {
-        // Criar Transação Normal
         await createTransaction(payload);
       }
       finishSubmit();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Ocorreu um erro.");
+      setError(err.response?.data?.detail || "An error occurred.");
       setLoading(false);
     }
   };
@@ -243,12 +244,12 @@ export default function AddTransaction() {
     setError('');
 
     if (!transferData.source_account_id || !transferData.destination_account_id || !transferData.amount) {
-      setError('Preencha todos os campos obrigatórios.');
+      setError('Fill all required fields.');
       setLoading(false);
       return;
     }
     if (transferData.source_account_id === transferData.destination_account_id) {
-      setError('A conta de origem e destino não podem ser a mesma.');
+      setError('Source and Destination accounts cannot be the same.');
       setLoading(false);
       return;
     }
@@ -263,7 +264,7 @@ export default function AddTransaction() {
       });
       finishSubmit();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Erro na transferência.");
+      setError(err.response?.data?.detail || "Transfer error.");
       setLoading(false);
     }
   };
@@ -288,6 +289,26 @@ export default function AddTransaction() {
     }
   };
 
+  // --- VERIFICAÇÃO DE SETUP ---
+  if (!loading && (accounts.length === 0 || categories.length === 0)) {
+    return (
+      <main className="min-h-screen bg-secondary dark:bg-primary p-6 flex items-center justify-center transition-colors duration-300">
+        <div className="bg-white dark:bg-primary p-8 rounded-xl shadow-soft max-w-lg w-full border border-secondary dark:border-gray-800 text-center">
+          <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+            ⚠️
+          </div>
+          <h1 className="text-2xl font-heading font-bold text-darkText dark:text-lightText mb-2">Setup Required</h1>
+          <p className="text-muted mb-6">
+            Before creating a transaction, you need to set up your <b>Accounts</b> and <b>Categories</b>.
+          </p>
+          <Link href="/settings" className="block w-full py-3 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-glow">
+            Go to Settings
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-secondary dark:bg-primary p-6 flex items-center justify-center transition-colors duration-300">
       <div className="bg-white dark:bg-primary p-8 rounded-xl shadow-soft max-w-lg w-full border border-secondary dark:border-gray-800">
@@ -298,13 +319,13 @@ export default function AddTransaction() {
             onClick={() => setMode('transaction')}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'transaction' ? 'bg-white dark:bg-gray-700 text-accent shadow-sm' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}
           >
-            Nova Transação
+            New Transaction
           </button>
           <button
             onClick={() => setMode('transfer')}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'transfer' ? 'bg-white dark:bg-gray-700 text-blue-500 shadow-sm' : 'text-muted hover:text-darkText dark:hover:text-lightText'}`}
           >
-            Transferência
+            Transfer
           </button>
         </div>
 
@@ -319,9 +340,9 @@ export default function AddTransaction() {
           <form onSubmit={handleSubmitTransaction} className="space-y-4 animate-fade-in">
             {/* 1. CONTA */}
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Conta *</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Account *</label>
               <select name="account_id" required value={formData.account_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
-                {accounts.length === 0 && <option value="">A carregar...</option>}
+                {accounts.length === 0 && <option value="">Loading...</option>}
                 {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
               </select>
             </div>
@@ -329,11 +350,11 @@ export default function AddTransaction() {
             {/* 2. DESCRIÇÃO E VALOR */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Descrição</label>
-                <input name="description" required value={formData.description} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent" placeholder="Ex: Café" />
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Description</label>
+                <input name="description" required value={formData.description} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent" placeholder="Ex: Coffee" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Valor (€)</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Amount (€)</label>
                 <input name="amount" type="number" step="0.01" required value={formData.amount} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent font-mono" placeholder="0.00" />
               </div>
             </div>
@@ -341,13 +362,13 @@ export default function AddTransaction() {
             {/* 3. TIPO E DATA */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Tipo</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Type</label>
                 <select name="transaction_type_id" value={formData.transaction_type_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
                   {filteredTypes.map(t => <option key={t.id} value={t.id}>{formatTypeName(t.name)}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Data</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Date</label>
                 <input name="date" type="date" required max={new Date().toISOString().split('T')[0]} value={formData.date} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent" />
               </div>
             </div>
@@ -355,16 +376,16 @@ export default function AddTransaction() {
             {/* 4. CATEGORIA E SUBCATEGORIA */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Categoria</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Category</label>
                 <select name="category_id" value={formData.category_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent">
-                  <option value="">-- Nenhuma --</option>
+                  <option value="">-- None --</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Subcategoria</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Subcategory</label>
                 <select name="sub_category_id" value={formData.sub_category_id} onChange={handleChange} disabled={!availableSubCategories.length} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed">
-                  <option value="">-- Nenhuma --</option>
+                  <option value="">-- None --</option>
                   {availableSubCategories.map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
                 </select>
               </div>
@@ -397,7 +418,7 @@ export default function AddTransaction() {
               </div>
             )}
 
-            {/* RECORRÊNCIA (Premium) */}
+            {/* RECURRING (Premium) */}
             {canUsePremiumFeatures && (
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                 <div className="flex items-center justify-between">
@@ -408,22 +429,22 @@ export default function AddTransaction() {
                       onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
-                    <span className="text-sm font-bold text-blue-800 dark:text-blue-200">Repetir esta transação?</span>
+                    <span className="text-sm font-bold text-blue-800 dark:text-blue-200">Repeat this transaction?</span>
                   </label>
                 </div>
                 
                 {formData.is_recurring && (
                   <div className="mt-3">
-                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Frequência</label>
+                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Frequency</label>
                     <select 
                       value={formData.frequency} 
                       onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
                       className="w-full p-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg text-sm outline-none"
                     >
-                      <option value="daily">Diariamente</option>
-                      <option value="weekly">Semanalmente</option>
-                      <option value="monthly">Mensalmente</option>
-                      <option value="yearly">Anualmente</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
                     </select>
                   </div>
                 )}
@@ -436,51 +457,51 @@ export default function AddTransaction() {
                 <h3 className="text-sm font-heading font-bold text-accent flex items-center gap-2">🛒 Smart Shopping</h3>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unidade</label>
+                    <label className="block text-[10px] font-bold text-muted uppercase mb-1">Unit</label>
                     <select name="measurement_unit" value={formData.measurement_unit} onChange={handleChange} className="w-full p-2 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none">
                       {UNITS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantidade</label>
+                    <label className="block text-[10px] font-bold text-muted uppercase mb-1">Quantity</label>
                     <input name="quantity" type="number" step="any" value={formData.quantity} onChange={handleChange} className="w-full p-2 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm" placeholder="Ex: 2" />
                   </div>
                   <div className="flex items-end">
                     <button type="button" onClick={handleAnalysis} disabled={analysisLoading} className="w-full py-2 bg-accent text-primary font-bold rounded-lg text-sm hover:bg-accent/90 disabled:opacity-50">
-                      {analysisLoading ? '...' : 'Analisar'}
+                      {analysisLoading ? '...' : 'Analyze'}
                     </button>
                   </div>
                 </div>
                 {calculatedUnitPrice && (
                   <div className="text-xs text-center font-mono text-muted">
-                    Preço implícito: <span className="font-bold text-darkText dark:text-lightText">{calculatedUnitPrice} € / {formData.measurement_unit}</span>
+                    Implied Price: <span className="font-bold text-darkText dark:text-lightText">{calculatedUnitPrice} € / {formData.measurement_unit}</span>
                   </div>
                 )}
                 {analysis && (
                   <div className={`text-sm font-medium p-2 rounded-lg text-center ${analysis.savings > 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-                    {analysis.savings > 0 ? `Ótimo! Poupaste ${analysis.savings.toFixed(2)}€/${formData.measurement_unit} face à média.` : `Atenção! Pagaste ${Math.abs(analysis.savings).toFixed(2)}€/${formData.measurement_unit} a mais que a média.`}
+                    {analysis.savings > 0 ? `Great! You saved ${analysis.savings.toFixed(2)}€/${formData.measurement_unit} vs average.` : `Attention! You paid ${Math.abs(analysis.savings).toFixed(2)}€/${formData.measurement_unit} more than average.`}
                   </div>
                 )}
               </div>
             )}
 
-            {/* INVESTIMENTO */}
+            {/* INVESTMENT */}
             {isInvestmentType && (
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">📈 Dados do Ativo</h3>
+                <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">📈 Asset Data</h3>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Ticker</label><input name="symbol" value={formData.symbol} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm uppercase" placeholder="AAPL" /></div>
-                  <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Quantidade</label><input name="quantity" type="number" step="any" value={formData.quantity} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="0.0" /></div>
-                  <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Preço/Un. (Op)</label><input name="price_per_unit" type="number" step="0.01" value={formData.price_per_unit} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="Auto" /></div>
+                  <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Quantity</label><input name="quantity" type="number" step="any" value={formData.quantity} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="0.0" /></div>
+                  <div className="col-span-1"><label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Price/Un. (Op)</label><input name="price_per_unit" type="number" step="0.01" value={formData.price_per_unit} onChange={handleChange} className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm" placeholder="Auto" /></div>
                 </div>
               </div>
             )}
 
             <div className="pt-4 flex flex-col gap-3">
               <button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent/90 text-primary font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">
-                {loading ? 'A processar...' : (formData.is_recurring ? 'Criar Recorrência' : 'Confirmar')}
+                {loading ? 'Processing...' : (formData.is_recurring ? 'Create Recurring' : 'Confirm')}
               </button>
-              <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+              <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancel</button>
             </div>
           </form>
         )}
@@ -490,9 +511,9 @@ export default function AddTransaction() {
           <form onSubmit={handleSubmitTransfer} className="space-y-4 animate-fade-in">
             {/* ORIGEM */}
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">De (Origem)</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">From (Source)</label>
               <select name="source_account_id" required value={transferData.source_account_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Selecionar conta...</option>
+                <option value="">Select account...</option>
                 {accounts.map(acc => (
                   <option key={acc.id} value={acc.id} disabled={String(acc.id) === transferData.destination_account_id}>
                     {acc.name} ({acc.current_balance?.toFixed(2)} €)
@@ -503,9 +524,9 @@ export default function AddTransaction() {
 
             {/* DESTINO */}
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Para (Destino)</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">To (Destination)</label>
               <select name="destination_account_id" required value={transferData.destination_account_id} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Selecionar conta...</option>
+                <option value="">Select account...</option>
                 {accounts.map(acc => (
                   <option key={acc.id} value={acc.id} disabled={String(acc.id) === transferData.source_account_id}>
                     {acc.name} ({acc.current_balance?.toFixed(2)} €)
@@ -517,24 +538,24 @@ export default function AddTransaction() {
             {/* VALOR E DATA */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Valor (€)</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Amount (€)</label>
                 <input name="amount" type="number" step="0.01" required value={transferData.amount} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-mono" placeholder="0.00" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Data</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Date</label>
                 <input name="date" type="date" required value={transferData.date} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
             {/* DESCRIÇÃO */}
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Descrição</label>
-              <input name="description" value={transferData.description} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Motivo" />
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Description</label>
+              <input name="description" value={transferData.description} onChange={handleChange} className="w-full p-3 bg-secondary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Reason" />
             </div>
 
             <div className="pt-4 flex flex-col gap-3">
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">{loading ? 'A processar...' : 'Confirmar Transferência'}</button>
-              <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancelar</button>
+              <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold py-3.5 rounded-xl transition-all shadow-glow disabled:opacity-50">{loading ? 'Processing...' : 'Confirm Transfer'}</button>
+              <button type="button" onClick={() => router.back()} className="w-full bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-muted font-medium py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">Cancel</button>
             </div>
           </form>
         )}

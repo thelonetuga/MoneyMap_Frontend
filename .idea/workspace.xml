@@ -4,8 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="reset password">
+    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="New lading page and change language to english">
+      <change afterPath="$PROJECT_DIR$/public/env-config.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/LandingPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/add/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/add/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/forgot-password/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/forgot-password/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/reset-password/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/reset-password/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/settings/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/settings/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/BottomNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/BottomNav.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ConfirmationModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ConfirmationModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/EditTransactionModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/EditTransactionModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/EvolutionChart.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/EvolutionChart.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SmartShoppingWidget.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SmartShoppingWidget.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/TransferModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/TransferModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/models.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/models.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,22 +34,22 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "thelonetuga"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;thelonetuga&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/thelonetuga/MoneyMap_Frontend.git",
-    "accountId": "cf51e565-944a-4078-83d9-2a466755f9da"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/thelonetuga/MoneyMap_Frontend.git&quot;,
+    &quot;accountId&quot;: &quot;cf51e565-944a-4078-83d9-2a466755f9da&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 6
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="382UdGwyUuVkCvzav8lFldKlpr8" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -39,27 +58,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "javascript.preferred.runtime.type.id": "node",
-    "js.debugger.nextJs.config.created.client": "true",
-    "js.debugger.nextJs.config.created.server": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
+    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
+    &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="npm.Next.js: server-side">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
@@ -89,7 +108,10 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1767997245319</updated>
-      <workItem from="1767997247129" duration="4230000" />
+      <workItem from="1767997247129" duration="5205000" />
+      <workItem from="1768008673975" duration="315000" />
+      <workItem from="1768009418158" duration="88000" />
+      <workItem from="1768047776132" duration="3123000" />
     </task>
     <task id="LOCAL-00001" summary="reset password">
       <option name="closed" value="true" />
@@ -115,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768004786437</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="reset password">
+      <option name="closed" value="true" />
+      <created>1768005093949</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1768005093949</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -123,6 +153,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="reset password" />
-    <option name="LAST_COMMIT_MESSAGE" value="reset password" />
+    <MESSAGE value="New lading page and change language to english" />
+    <option name="LAST_COMMIT_MESSAGE" value="New lading page and change language to english" />
   </component>
 </project>

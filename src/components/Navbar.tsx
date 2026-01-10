@@ -24,13 +24,14 @@ export default function Navbar() {
         : "text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 hover:text-darkText dark:hover:text-lightText" // Inativo
     }`;
 
-  if (["/login", "/register"].includes(pathname)) return null;
+  // Esconder navbar em páginas de auth dedicadas (opcional, mas mantemos para limpeza)
+  if (["/login", "/register", "/forgot-password", "/reset-password"].includes(pathname)) return null;
 
   const getRoleLabel = (role?: string) => {
     switch(role) {
       case 'admin': return 'Admin';
       case 'premium': return 'Premium';
-      default: return 'Básico';
+      default: return 'Basic';
     }
   };
 
@@ -42,7 +43,6 @@ export default function Navbar() {
     }
   };
 
-  // Toggle function
   const toggleTheme = () => {
     if (resolvedTheme === 'dark') {
       setTheme('light');
@@ -55,6 +55,8 @@ export default function Navbar() {
     <nav className="bg-white dark:bg-primary border-b border-secondary dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300 shadow-soft">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between h-16">
+          
+          {/* LOGO (Sempre visível) */}
           <div className="flex items-center">
             <Link
               href="/"
@@ -64,92 +66,103 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-1">
-            <Link href="/" className={linkStyle("/")}>
-              Dashboard
-            </Link>
-            <Link href="/transactions" className={linkStyle("/transactions")}>
-              Transações
-            </Link>
-            <Link href="/settings" className={linkStyle("/settings")}>
-              Definições ⚙️
-            </Link>
-            {user?.role === "admin" && (
-              <Link
-                href="/admin"
-                className={
-                  linkStyle("/admin") +
-                  " text-purple-500 bg-purple-50/20 hover:bg-purple-50/30"
-                }
-              >
-                Admin 🛡️
+          {/* MENU CENTRAL (Apenas para Utilizadores Logados) */}
+          {user && (
+            <div className="hidden md:flex items-center space-x-1">
+              <Link href="/" className={linkStyle("/")}>
+                Dashboard
               </Link>
-            )}
-          </div>
+              <Link href="/transactions" className={linkStyle("/transactions")}>
+                Transactions
+              </Link>
+              <Link href="/settings" className={linkStyle("/settings")}>
+                Settings ⚙️
+              </Link>
+              {user?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className={
+                    linkStyle("/admin") +
+                    " text-purple-500 bg-purple-50/20 hover:bg-purple-50/30"
+                  }
+                >
+                  Admin 🛡️
+                </Link>
+              )}
+            </div>
+          )}
 
+          {/* LADO DIREITO */}
           <div className="flex items-center gap-4">
-            {/* THEME TOGGLE (Disponível para todos) */}
+            
+            {/* THEME TOGGLE (Sempre visível) */}
             {mounted && (
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors"
-                title={resolvedTheme === "dark" ? "Mudar para Claro" : "Mudar para Escuro"}
+                title={resolvedTheme === "dark" ? "Switch to Light" : "Switch to Dark"}
               >
                 {resolvedTheme === "dark" ? "☀️" : "🌙"}
               </button>
             )}
 
-            {/* BOTÃO NOVA TRANSAÇÃO (Desktop) */}
-            <Link
-              href="/add"
-              className={`hidden md:flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-heading font-semibold text-primary bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-glow`}
-            >
-              <span>+</span>
-              <span className="hidden sm:inline">Nova</span>
-            </Link>
+            {/* ESTADO: NÃO LOGADO */}
+            {!loading && !user && (
+              <div className="flex items-center gap-3">
+                <Link href="/login" className="text-sm font-bold text-muted hover:text-darkText dark:hover:text-white transition-colors">
+                  Login
+                </Link>
+                <Link href="/register" className="px-4 py-2 rounded-lg bg-accent hover:bg-accent/90 text-primary text-sm font-bold transition-all shadow-glow">
+                  Get Started
+                </Link>
+              </div>
+            )}
 
-            <div className="h-6 w-px bg-secondary dark:bg-gray-700 mx-1 hidden sm:block"></div>
-
-            <div className="flex items-center gap-3">
-              
-              {/* LINK PARA PERFIL (Desktop: Nome/Cargo) */}
-              <Link href="/profile" className="text-right hidden sm:flex flex-col items-end justify-center hover:opacity-80 transition-opacity cursor-pointer">
-                <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
-                  {loading ? "..." : user?.profile?.first_name || user?.email?.split('@')[0]}
-                </p>
-                <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role || undefined)}`}>
-                  {getRoleLabel(user?.role || undefined)}
-                </p>
-              </Link>
-
-              {/* LINK PARA PERFIL (Mobile: Ícone) - NOVO */}
-              <Link href="/profile" className="sm:hidden p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-              </Link>
-
-              <button
-                onClick={logout}
-                className="p-2 rounded-lg text-muted hover:text-error hover:bg-error/10 transition-colors"
-                title="Sair"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
+            {/* ESTADO: LOGADO */}
+            {user && (
+              <>
+                {/* BOTÃO NOVA TRANSAÇÃO */}
+                <Link
+                  href="/add"
+                  className={`hidden md:flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-heading font-semibold text-primary bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-glow`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                  />
-                </svg>
-              </button>
-            </div>
+                  <span>+</span>
+                  <span className="hidden sm:inline">New</span>
+                </Link>
+
+                <div className="h-6 w-px bg-secondary dark:bg-gray-700 mx-1 hidden sm:block"></div>
+
+                <div className="flex items-center gap-3">
+                  
+                  {/* LINK PARA PERFIL */}
+                  <Link href="/profile" className="text-right hidden sm:flex flex-col items-end justify-center hover:opacity-80 transition-opacity cursor-pointer">
+                    <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
+                      {user?.profile?.first_name || user?.email?.split('@')[0]}
+                    </p>
+                    <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role || undefined)}`}>
+                      {getRoleLabel(user?.role || undefined)}
+                    </p>
+                  </Link>
+
+                  {/* ÍCONE PERFIL MOBILE */}
+                  <Link href="/profile" className="sm:hidden p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </Link>
+
+                  <button
+                    onClick={logout}
+                    className="p-2 rounded-lg text-muted hover:text-error hover:bg-error/10 transition-colors"
+                    title="Logout"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
