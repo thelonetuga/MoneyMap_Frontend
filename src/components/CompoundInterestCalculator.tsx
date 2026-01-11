@@ -27,7 +27,6 @@ export default function CompoundInterestCalculator() {
   // Calculation Logic
   const handleCalculate = async () => {
     if (!isPremium) {
-      // Se não for premium, não faz nada (o PremiumLock já trata do clique, mas isto é segurança extra)
       return;
     }
 
@@ -199,7 +198,10 @@ export default function CompoundInterestCalculator() {
                 <YAxis tick={{ fill: '#94A3B8', fontSize: 12 }} tickFormatter={(val) => `${(val/1000).toFixed(0)}k`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', backgroundColor: 'var(--tooltip-bg, #fff)' }}
-                  formatter={(value: number) => value.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                  formatter={(value: any) => {
+                    const val = Number(value);
+                    return isNaN(val) ? '0.00 €' : val.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                  }}
                 />
                 <Legend />
                 <Area type="monotone" dataKey="contributed" name="Total Invested" stackId="1" stroke="#3b82f6" fill="url(#colorContributed)" />
