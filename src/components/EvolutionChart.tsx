@@ -14,12 +14,14 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { getEvolution } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 type Preset = '6M' | 'YTD' | '1Y' | 'ALL';
 
 export default function EvolutionChart() {
   const [activePreset, setActivePreset] = useState<Preset>('ALL');
   const { resolvedTheme } = useTheme();
+  const { formatCurrency } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -138,7 +140,7 @@ export default function EvolutionChart() {
                 else if (name === 'liquid_cash') label = 'Liquidity';
                 else if (name === 'income') label = 'Income';
                 else if (name === 'expenses') label = 'Expenses';
-                return [`${Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}`, label];
+                return [formatCurrency(Number(value)), label];
               }}
             />
             <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: axisColor }} />

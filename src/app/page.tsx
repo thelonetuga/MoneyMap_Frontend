@@ -14,6 +14,7 @@ import LandingPage from '../components/LandingPage';
 import { PortfolioPosition } from '@/types/models'; 
 import { useAuth } from '@/context/AuthContext';
 import PremiumLock from '@/components/PremiumLock';
+import { useNotification } from '@/context/NotificationContext';
 
 // Cores: Investimentos (Azuis) vs Despesas (Laranjas/Vermelhos)
 const COLORS_INVEST = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -22,6 +23,7 @@ const COLORS_SPEND = ['#FF8042', '#FFBB28', '#FF6B6B', '#D94848', '#993333'];
 export default function Home() {
   const router = useRouter();
   const { user, loading: authLoading, formatCurrency } = useAuth();
+  const { showNotification } = useNotification();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('30d');
   
@@ -71,9 +73,10 @@ export default function Home() {
       await queryClient.invalidateQueries({ queryKey: ['evolution'] });
       setEditingSymbol(null);
       setEditPrice('');
+      showNotification('success', 'Price updated successfully!');
     } catch (error) {
       console.error("Error saving price:", error);
-      alert("Error updating price. Please try again.");
+      showNotification('error', 'Error updating price. Please try again.');
     } finally {
       setSavingPrice(false);
     }

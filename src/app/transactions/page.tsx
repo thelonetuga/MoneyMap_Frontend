@@ -59,7 +59,7 @@ export default function TransactionsPage() {
     enabled: !!user && (user.role === 'admin' || user.role === 'premium')
   });
 
-  // Subcategorias filtradas (CORRIGIDO)
+  // Subcategorias filtradas
   const subcategories = (Array.isArray(categories) && filterCategory)
     ? categories.find((c: any) => c.id === Number(filterCategory))?.subcategories || []
     : [];

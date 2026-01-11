@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function EmergencyFundCalculator() {
   const { showNotification } = useNotification();
-  const { user } = useAuth();
+  const { user, formatCurrency } = useAuth();
   
   // State
   const [categories, setCategories] = useState<any[]>([]);
@@ -139,7 +139,7 @@ export default function EmergencyFundCalculator() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <p className="text-sm font-bold uppercase opacity-80 mb-2">🎯 Total Emergency Fund Goal</p>
               <h2 className="text-5xl md:text-6xl font-heading font-bold mb-4">
-                {result.total_target.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
+                {formatCurrency(result.total_target)}
               </h2>
               <p className="text-sm opacity-90 bg-white/20 inline-block px-4 py-1 rounded-full">
                 Covers {result.months_covered} months of essential expenses
@@ -151,7 +151,7 @@ export default function EmergencyFundCalculator() {
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-soft border border-secondary dark:border-gray-700">
                 <p className="text-xs font-bold uppercase text-muted mb-1">📅 Monthly Essential Cost</p>
                 <p className="text-2xl font-heading font-bold text-darkText dark:text-lightText">
-                  {result.monthly_essential_expenses.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
+                  {formatCurrency(result.monthly_essential_expenses)}
                 </p>
                 <p className="text-xs text-gray-400 mt-2">Based on your average spending in selected categories.</p>
               </div>

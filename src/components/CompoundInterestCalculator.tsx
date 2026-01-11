@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotification } from '@/context/NotificationContext';
 
 export default function CompoundInterestCalculator() {
-  const { user } = useAuth();
+  const { user, formatCurrency } = useAuth();
   const { showNotification } = useNotification();
   
   // State
@@ -97,7 +97,7 @@ export default function CompoundInterestCalculator() {
       <div className="lg:col-span-1 space-y-6 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-soft border border-secondary dark:border-gray-800 h-fit">
         
         <div>
-          <label className={labelClass}>Initial Investment (€)</label>
+          <label className={labelClass}>Initial Investment</label>
           <input 
             type="number" 
             value={initial} 
@@ -108,7 +108,7 @@ export default function CompoundInterestCalculator() {
         </div>
 
         <div>
-          <label className={labelClass}>Monthly Contribution (€)</label>
+          <label className={labelClass}>Monthly Contribution</label>
           <input 
             type="number" 
             value={monthly} 
@@ -160,19 +160,19 @@ export default function CompoundInterestCalculator() {
           <div className="bg-accent text-primary p-6 rounded-2xl shadow-lg shadow-accent/20">
             <p className="text-xs font-bold uppercase opacity-80 mb-1">💰 Final Balance</p>
             <p className="text-3xl font-heading font-bold">
-              {isPremium ? result.total.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }) : '---'}
+              {isPremium ? formatCurrency(result.total) : '---'}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-soft border border-secondary dark:border-gray-700">
             <p className="text-xs font-bold uppercase text-muted mb-1">📥 Total Invested</p>
             <p className="text-2xl font-heading font-bold text-darkText dark:text-lightText">
-              {isPremium ? result.contributed.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }) : '---'}
+              {isPremium ? formatCurrency(result.contributed) : '---'}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-soft border border-secondary dark:border-gray-700">
             <p className="text-xs font-bold uppercase text-success mb-1">📈 Total Interest</p>
             <p className="text-2xl font-heading font-bold text-success">
-              {isPremium ? `+${result.interest.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })}` : '---'}
+              {isPremium ? `+${formatCurrency(result.interest)}` : '---'}
             </p>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function CompoundInterestCalculator() {
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', backgroundColor: 'var(--tooltip-bg, #fff)' }}
                   formatter={(value: any) => {
                     const val = Number(value);
-                    return isNaN(val) ? '0.00 €' : val.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                    return isNaN(val) ? formatCurrency(0) : formatCurrency(val);
                   }}
                 />
                 <Legend />
@@ -235,9 +235,9 @@ export default function CompoundInterestCalculator() {
                   {data.map((row) => (
                     <tr key={row.year} className="border-b border-secondary dark:border-gray-700 last:border-0 hover:bg-secondary/50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-3 font-mono">{row.year}</td>
-                      <td className="px-6 py-3 text-right font-mono">{row.contributed.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
-                      <td className="px-6 py-3 text-right font-mono text-success">+{row.interest.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
-                      <td className="px-6 py-3 text-right font-bold">{row.balance.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      <td className="px-6 py-3 text-right font-mono">{formatCurrency(row.contributed)}</td>
+                      <td className="px-6 py-3 text-right font-mono text-success">+{formatCurrency(row.interest)}</td>
+                      <td className="px-6 py-3 text-right font-bold">{formatCurrency(row.balance)}</td>
                     </tr>
                   ))}
                 </tbody>
