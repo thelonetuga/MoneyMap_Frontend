@@ -42,8 +42,17 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('un');
 
+  // Investment State
+  const [symbol, setSymbol] = useState('');
+  const [pricePerUnit, setPricePerUnit] = useState('');
+
   const isBulk = transactionIds.length > 1;
   const canUsePremiumFeatures = user?.role === 'admin' || user?.role === 'premium';
+
+  // Detect Investment
+  const isInvestment = initialData?.transaction_type?.is_investment || 
+                       initialData?.asset_id || 
+                       initialData?.symbol;
 
   // Load Data
   useEffect(() => {
@@ -72,8 +81,13 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
         setCategoryId(initialData.category?.id || '');
         setAccountId(initialData.account?.id || '');
         
+        // Smart Shopping
         setQuantity(initialData.quantity || '');
         setUnit(initialData.measurement_unit || 'un');
+
+        // Investment
+        setSymbol(initialData.symbol || '');
+        setPricePerUnit(initialData.price_per_unit || '');
         
         if (initialData.tags) {
           setSelectedTagIds(initialData.tags.map((t: Tag) => t.id));
@@ -81,11 +95,14 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
           setSelectedTagIds([]);
         }
       } else {
+        // Reset form
         setDescription('');
         setCategoryId('');
         setAccountId('');
         setQuantity('');
         setUnit('un');
+        setSymbol('');
+        setPricePerUnit('');
         setSelectedTagIds([]);
       }
     }
@@ -101,13 +118,8 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
     e.preventDefault();
     setLoading(true);
 
-    if (!isBulk) {
-      if (!accountId) {
-        showNotification('warning', 'Account is required.');
-        setLoading(false);
-        return;
-      }
-    }
+    // Account ID is not editable, so we don't need to validate it here for single edit
+    // For bulk edit, we might want to allow changing account? Assuming NO for safety.
 
     try {
       const payload: any = {};
@@ -119,12 +131,20 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
         payload.category_id = null;
       }
 
-      if (accountId) payload.account_id = Number(accountId);
+      // Account ID is NOT sent in update to prevent moving transactions between accounts
+      // if (accountId) payload.account_id = Number(accountId); 
       
       if (canUsePremiumFeatures) {
-        if (quantity) payload.quantity = Number(quantity);
-        if (unit) payload.measurement_unit = unit;
         payload.tag_ids = selectedTagIds;
+
+        if (isInvestment) {
+            if (symbol) payload.symbol = symbol.toUpperCase();
+            if (quantity) payload.quantity = Number(quantity);
+            if (pricePerUnit) payload.price_per_unit = Number(pricePerUnit);
+        } else {
+            if (quantity) payload.quantity = Number(quantity);
+            if (unit) payload.measurement_unit = unit;
+        }
       }
 
       await Promise.all(transactionIds.map(id => api.patch(`/transactions/${id}/`, payload)));
@@ -162,19 +182,20 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             />
           </div>
 
-          {/* ACCOUNT */}
+          {/* ACCOUNT (DISABLED) */}
           <div>
-            <label className="block text-xs font-bold text-muted uppercase mb-1">Account *</label>
+            <label className="block text-xs font-bold text-muted uppercase mb-1">Account</label>
             <select 
               value={accountId} 
-              onChange={e => setAccountId(e.target.value)}
-              className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
+              disabled={true} // BLOQUEADO
+              className="w-full p-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none text-muted cursor-not-allowed"
             >
-              <option value="">{isBulk ? "Keep original" : "Select..."}</option>
+              <option value="">{isBulk ? "Multiple Accounts" : "Select..."}</option>
               {accounts.map(acc => (
                 <option key={acc.id} value={acc.id}>{acc.name}</option>
               ))}
             </select>
+            <p className="text-[10px] text-muted mt-1">Cannot change account of existing transaction.</p>
           </div>
 
           {/* CATEGORY */}
@@ -219,8 +240,48 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
             </div>
           )}
 
-          {/* SMART SHOPPING (Premium/Admin) */}
-          {canUsePremiumFeatures && (
+          {/* INVESTMENT FIELDS (Se for investimento) */}
+          {isInvestment && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+              <h3 className="text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-2 flex items-center gap-1">
+                📈 Asset Data
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Ticker</label>
+                    <input 
+                        value={symbol} 
+                        onChange={e => setSymbol(e.target.value)}
+                        className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm uppercase text-darkText dark:text-lightText"
+                        placeholder="AAPL" 
+                    />
+                </div>
+                <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Qty</label>
+                    <input 
+                        type="number"
+                        value={quantity} 
+                        onChange={e => setQuantity(e.target.value)}
+                        className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm text-darkText dark:text-lightText"
+                        placeholder="0.0" 
+                    />
+                </div>
+                <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Price</label>
+                    <input 
+                        type="number"
+                        value={pricePerUnit} 
+                        onChange={e => setPricePerUnit(e.target.value)}
+                        className="w-full p-2 rounded border border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-700 text-sm text-darkText dark:text-lightText"
+                        placeholder="Auto" 
+                    />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SMART SHOPPING (Se NÃO for investimento e for Premium) */}
+          {canUsePremiumFeatures && !isInvestment && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10">
               <h3 className="text-xs font-bold text-accent uppercase mb-2 flex items-center gap-1">
                 🛒 Smart Shopping

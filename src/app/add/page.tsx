@@ -136,7 +136,10 @@ export default function AddTransaction() {
 
   // --- FILTER LOGIC (Transaction) ---
   const selectedAccount = accounts.find(a => a.id === Number(formData.account_id));
-  const isInvestmentAccount = selectedAccount?.account_type?.name.toLowerCase().includes('investimento');
+  
+  // CORREÇÃO: Verifica "investimento" (PT) e "investment" (EN)
+  const isInvestmentAccount = selectedAccount?.account_type?.name.toLowerCase().includes('investimento') || 
+                              selectedAccount?.account_type?.name.toLowerCase().includes('investment');
 
   const filteredTypes = types.filter(t => {
     if (isInvestmentAccount) return t.is_investment;
@@ -156,9 +159,15 @@ export default function AddTransaction() {
 
   // --- UI LOGIC (Transaction) ---
   const selectedType = types.find(t => t.id === Number(formData.transaction_type_id));
-  const isInvestmentType = selectedType?.is_investment || false;
+  
+  // CORREÇÃO: Força modo de investimento se a conta for de investimento
+  const isInvestmentType = selectedType?.is_investment || isInvestmentAccount || false;
+  
   const isExpense = selectedType?.name.toLowerCase().includes('despesa') || selectedType?.name.toLowerCase().includes('expense');
-  const canUseSmartShopping = (user?.role === 'admin' || user?.role === 'premium') && isExpense;
+  
+  // CORREÇÃO: Garante que Smart Shopping não aparece em investimentos
+  const canUseSmartShopping = (user?.role === 'admin' || user?.role === 'premium') && isExpense && !isInvestmentType;
+
   const canUsePremiumFeatures = user?.role === 'admin' || user?.role === 'premium';
   
   const availableSubCategories = categories.find(c => c.id === Number(formData.category_id))?.subcategories || [];

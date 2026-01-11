@@ -97,7 +97,7 @@ export const getSpending = async (range: string = '30d'): Promise<SpendingItem[]
 };
 
 export const getEvolution = async (period: string = 'year', time_range: string = 'all'): Promise<EvolutionPoint[]> => {
-  const response = await api.get('/analytics/evolution/', { params: { period, time_range } });
+  const response = await api.get('/analytics/evolution', { params: { period, time_range } });
   return response.data as EvolutionPoint[];
 };
 
@@ -115,7 +115,7 @@ export const getSmartShoppingAnalysis = async (itemName: string, currentPrice: n
 
 export const getSmartShoppingSummary = async (period: 'month' | 'year' | 'all' = 'all', page: number = 1, size: number = 10): Promise<SmartShoppingSummary> => {
   const safePeriod = period || 'all';
-  const response = await api.get('/analytics/smart-shopping/summary/', { 
+  const response = await api.get('/analytics/smart-shopping/summary', {
     params: { 
       period: safePeriod,
       page,

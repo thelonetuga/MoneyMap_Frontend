@@ -6,7 +6,7 @@ import { getSmartShoppingSummary } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SmartShoppingWidget() {
-  const { user } = useAuth();
+  const { user, formatCurrency } = useAuth();
   const [period, setPeriod] = useState<'month' | 'year' | 'all'>('all');
   const [page, setPage] = useState(1);
 
@@ -40,16 +40,16 @@ export default function SmartShoppingWidget() {
         </div>
         <div className="mb-6 text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
           <span className="text-xs font-bold text-muted uppercase tracking-wider">Total Saved</span>
-          <div className="text-3xl font-heading font-bold mt-1 text-success">+124.50 €</div>
+          <div className="text-3xl font-heading font-bold mt-1 text-success">{formatCurrency(124.50)}</div>
         </div>
         <div className="flex-1 space-y-3">
            <div className="flex justify-between items-center p-3 bg-secondary/50 dark:bg-gray-800/50 rounded-lg">
               <div><p className="font-bold text-sm">Coffee Beans</p><p className="text-xs text-muted">12 purchases</p></div>
-              <div className="font-bold text-sm text-success">+15.20 €</div>
+              <div className="font-bold text-sm text-success">+{formatCurrency(15.20)}</div>
            </div>
            <div className="flex justify-between items-center p-3 bg-secondary/50 dark:bg-gray-800/50 rounded-lg">
               <div><p className="font-bold text-sm">Olive Oil</p><p className="text-xs text-muted">4 purchases</p></div>
-              <div className="font-bold text-sm text-success">+8.40 €</div>
+              <div className="font-bold text-sm text-success">+{formatCurrency(8.40)}</div>
            </div>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function SmartShoppingWidget() {
       <div className="mb-6 text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
         <span className="text-xs font-bold text-muted uppercase tracking-wider">Total Saved ({getPeriodLabel()})</span>
         <div className={`text-3xl font-heading font-bold mt-1 tabular-nums ${data.total_savings >= 0 ? 'text-success' : 'text-error'}`}>
-          {data.total_savings >= 0 ? '+' : ''}{data.total_savings.toFixed(2)} €
+          {data.total_savings >= 0 ? '+' : ''}{formatCurrency(data.total_savings)}
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export default function SmartShoppingWidget() {
               <p className="text-xs text-muted">{item.purchase_count} purchases</p>
             </div>
             <div className={`font-bold text-sm tabular-nums ${item.total_savings >= 0 ? 'text-success' : 'text-error'}`}>
-              {item.total_savings >= 0 ? '+' : ''}{item.total_savings.toFixed(2)} €
+              {item.total_savings >= 0 ? '+' : ''}{formatCurrency(item.total_savings)}
             </div>
           </div>
         ))}
