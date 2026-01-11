@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import Script from "next/script"; // IMPORTADO
+import Script from "next/script";
 import "./globals.css";
-import Navbar from "../components/Navbar";
-import BottomNav from "../components/BottomNav";
-import { AuthProvider } from "../context/AuthContext";
-import ReactQueryProvider from "../lib/react-query";
-import { ThemeProvider } from "../components/ThemeProvider";
+import { AuthProvider } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
+import { PremiumProvider } from "@/context/PremiumContext";
+import ReactQueryProvider from "@/lib/react-query";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import AppLayout from "@/components/AppLayout";
 
 // Configuração das Fontes
 const inter = Inter({ 
@@ -35,19 +36,20 @@ export default function RootLayout({
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
-        {/* Carregar variáveis de ambiente em tempo de execução */}
+        <title>MoneyMap</title>
         <Script src="/env-config.js" strategy="beforeInteractive" />
       </head>
       <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased bg-secondary dark:bg-primary text-darkText dark:text-lightText transition-colors duration-300`}>
         <ReactQueryProvider>
           <AuthProvider>
-            {/* Default Theme agora é LIGHT */}
             <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-              <Navbar />
-              <div className="pb-20 md:pb-0 min-h-screen">
-                {children}
-              </div>
-              <BottomNav />
+              <NotificationProvider>
+                <PremiumProvider>
+                  <AppLayout>
+                    {children}
+                  </AppLayout>
+                </PremiumProvider>
+              </NotificationProvider>
             </ThemeProvider>
           </AuthProvider>
         </ReactQueryProvider>

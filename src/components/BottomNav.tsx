@@ -22,6 +22,8 @@ export default function BottomNav() {
         : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
     }`;
 
+  const canAccessPremium = user?.role === 'admin' || user?.role === 'premium';
+
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 md:hidden pb-safe">
       <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
@@ -48,11 +50,11 @@ export default function BottomNav() {
           </Link>
         </div>
 
-        {/* 4. ADMIN ou DEFINIÇÕES */}
-        {user?.role === 'admin' ? (
-          <Link href="/admin" className={navItemClass(isActive('/admin'))}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            <span className="text-[10px]">Admin</span>
+        {/* 4. CALCULADORA (Premium) ou DEFINIÇÕES */}
+        {canAccessPremium ? (
+          <Link href="/calculator" className={navItemClass(isActive('/calculator'))}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            <span className="text-[10px]">Calc</span>
           </Link>
         ) : (
           <Link href="/settings" className={navItemClass(isActive('/settings'))}>
@@ -61,8 +63,8 @@ export default function BottomNav() {
           </Link>
         )}
 
-        {/* 5. DEFINIÇÕES (Admin) ou PERFIL (User) */}
-        {user?.role === 'admin' ? (
+        {/* 5. PERFIL ou DEFINIÇÕES (Se Calc estiver ativo) */}
+        {canAccessPremium ? (
            <Link href="/settings" className={navItemClass(isActive('/settings'))}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               <span className="text-[10px]">Settings</span>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import api, { getTags } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { Tag } from '@/types/models';
+import { useNotification } from '@/context/NotificationContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const UNITS = [
 
 export default function EditTransactionModal({ isOpen, onClose, onSave, transactionIds, initialData }: ModalProps) {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -101,7 +103,7 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
 
     if (!isBulk) {
       if (!accountId) {
-        alert('Account is required.');
+        showNotification('warning', 'Account is required.');
         setLoading(false);
         return;
       }
@@ -127,11 +129,12 @@ export default function EditTransactionModal({ isOpen, onClose, onSave, transact
 
       await Promise.all(transactionIds.map(id => api.patch(`/transactions/${id}/`, payload)));
       
+      showNotification('success', 'Transactions updated successfully!');
       onSave();
       onClose();
     } catch (err) {
       console.error(err);
-      alert('Error updating transactions.');
+      showNotification('error', 'Error updating transactions.');
     } finally {
       setLoading(false);
     }

@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { showNotification } = useNotification();
+  
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -29,20 +32,23 @@ export default function ProfilePage() {
         last_name: lastName,
         preferred_currency: currency 
       });
-      alert('Perfil atualizado com sucesso! ✅');
-      // Opcional: Recarregar user do contexto se necessário
+      
+      // Atualiza os dados do utilizador em toda a app (Sidebar, Contexto, etc.)
+      await refreshUser();
+      
+      showNotification('success', 'Profile updated successfully!', 'Saved');
     } catch (err) {
       console.error(err);
-      alert('Erro ao guardar perfil.');
+      showNotification('error', 'Error saving profile. Please try again.', 'Error');
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted">A carregar perfil...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted">Loading profile...</div>;
 
   return (
     <main className="min-h-screen bg-secondary dark:bg-primary p-6 transition-colors duration-300">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">O Meu Perfil 👤</h1>
+        <h1 className="text-3xl font-heading font-bold text-darkText dark:text-lightText mb-8">My Profile 👤</h1>
 
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-soft border border-secondary dark:border-gray-700">
           
@@ -63,7 +69,7 @@ export default function ProfilePage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Nome</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">First Name</label>
                 <input 
                   value={firstName} 
                   onChange={e => setFirstName(e.target.value)} 
@@ -71,7 +77,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-muted uppercase mb-1">Apelido</label>
+                <label className="block text-xs font-bold text-muted uppercase mb-1">Last Name</label>
                 <input 
                   value={lastName} 
                   onChange={e => setLastName(e.target.value)} 
@@ -81,15 +87,16 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-muted uppercase mb-1">Moeda Preferida</label>
+              <label className="block text-xs font-bold text-muted uppercase mb-1">Preferred Currency</label>
               <select 
                 value={currency} 
                 onChange={e => setCurrency(e.target.value)} 
                 className="w-full p-3 bg-secondary dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-accent text-darkText dark:text-lightText"
               >
                 <option value="EUR">Euro (€)</option>
-                <option value="USD">Dólar ($)</option>
-                <option value="GBP">Libra (£)</option>
+                <option value="USD">Dollar ($)</option>
+                <option value="GBP">Pound (£)</option>
+                <option value="BRL">Real (R$)</option>
               </select>
             </div>
 
@@ -97,7 +104,7 @@ export default function ProfilePage() {
               type="submit" 
               className="w-full py-3 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-glow"
             >
-              Guardar Alterações
+              Save Changes
             </button>
           </form>
         </div>

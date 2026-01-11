@@ -13,6 +13,7 @@ import SmartShoppingWidget from '../components/SmartShoppingWidget';
 import LandingPage from '../components/LandingPage';
 import { PortfolioPosition } from '@/types/models'; 
 import { useAuth } from '@/context/AuthContext';
+import PremiumLock from '@/components/PremiumLock';
 
 // Cores: Investimentos (Azuis) vs Despesas (Laranjas/Vermelhos)
 const COLORS_INVEST = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -20,7 +21,7 @@ const COLORS_SPEND = ['#FF8042', '#FFBB28', '#FF6B6B', '#D94848', '#993333'];
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, formatCurrency } = useAuth();
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('30d');
   
@@ -141,7 +142,7 @@ export default function Home() {
     }
   };
 
-  const canViewSmartShopping = user?.role === 'admin' || user?.role === 'premium';
+  const isPremium = user?.role === 'admin' || user?.role === 'premium';
 
   return (
     <main className="min-h-screen bg-secondary dark:bg-primary p-4 md:p-8 transition-colors duration-300 pb-24 md:pb-8">
@@ -182,19 +183,19 @@ export default function Home() {
           <div className="min-w-[85vw] md:min-w-0 snap-center bg-primary rounded-xl p-6 text-lightText shadow-soft border border-gray-800 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-accent/20"></div>
             <span className="text-accent text-xs font-bold uppercase tracking-wider">Total Net Worth</span>
-            <div className="text-3xl font-heading font-bold mt-1 tabular-nums">{calculatedNetWorth.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+            <div className="text-3xl font-heading font-bold mt-1 tabular-nums">{formatCurrency(calculatedNetWorth)}</div>
           </div>
 
           {/* Card 2: Liquidity */}
           <div className="min-w-[85vw] md:min-w-0 snap-center bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">💰 Liquidity (Cash)</span>
-            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{(portfolio?.total_cash ?? 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{formatCurrency(portfolio?.total_cash ?? 0)}</div>
           </div>
 
           {/* Card 3: Invested */}
           <div className="min-w-[85vw] md:min-w-0 snap-center bg-white dark:bg-primary rounded-xl p-6 border border-secondary dark:border-gray-800 shadow-soft">
             <span className="text-muted text-xs font-bold uppercase tracking-wider">📈 Total Invested</span>
-            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{calculatedTotalInvested.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</div>
+            <div className="text-2xl font-heading font-bold text-darkText dark:text-lightText mt-1 tabular-nums">{formatCurrency(calculatedTotalInvested)}</div>
           </div>
         </div>
 
@@ -235,7 +236,7 @@ export default function Home() {
                     <YAxis hide={true} domain={['auto', 'auto']} />
                     <Tooltip 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', backgroundColor: 'var(--tooltip-bg, #fff)' }} 
-                      formatter={(value: any) => [Number(value).toFixed(2) + ' €', 'Net Worth']} 
+                      formatter={(value: any) => [formatCurrency(Number(value)), 'Net Worth']} 
                     />
                     <Area type="monotone" dataKey="value" stroke="#00DC82" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                   </AreaChart>
@@ -251,7 +252,7 @@ export default function Home() {
               <div className="flex flex-col items-end">
                 <span className="text-xs font-medium text-muted mb-1">{getRangeLabel(timeRange)}</span>
                 <span className="text-xs bg-error/10 text-error font-bold px-2 py-1 rounded-full">
-                  Total: {totalSpending.toFixed(0)}€
+                  Total: {formatCurrency(totalSpending)}
                 </span>
               </div>
             </div>
@@ -267,7 +268,7 @@ export default function Home() {
                         <Cell key={`cell-${index}`} fill={COLORS_SPEND[index % COLORS_SPEND.length]} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => Number(value).toFixed(2) + ' €'} />
+                    <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ color: '#94A3B8' }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -287,11 +288,11 @@ export default function Home() {
         </div>
 
         {/* 4. NOVO: WIDGET SMART SHOPPING (Premium/Admin) */}
-        {canViewSmartShopping && (
-          <div className="mb-8">
+        <div className="mb-8">
+          <PremiumLock isLocked={!isPremium}>
             <SmartShoppingWidget />
-          </div>
-        )}
+          </PremiumLock>
+        </div>
 
         {/* 5. LINHA INFERIOR (Investimentos + Tabela) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -308,7 +309,7 @@ export default function Home() {
                         <Cell key={`cell-${index}`} fill={COLORS_INVEST[index % COLORS_INVEST.length]} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: any) => Number(value).toFixed(2) + ' €'} />
+                    <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                     <Legend wrapperStyle={{ color: '#94A3B8' }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -334,19 +335,19 @@ export default function Home() {
                       <span className="font-bold text-darkText dark:text-lightText">{pos.symbol}</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-darkText dark:text-lightText">{pos.total_value.toFixed(2)} €</p>
+                      <p className="font-bold text-darkText dark:text-lightText">{formatCurrency(pos.total_value)}</p>
                       <p className={`text-xs font-bold ${pos.profit_loss >= 0 ? 'text-success' : 'text-error'}`}>
-                        {pos.profit_loss > 0 ? '+' : ''}{pos.profit_loss.toFixed(2)} €
+                        {pos.profit_loss > 0 ? '+' : ''}{formatCurrency(pos.profit_loss)}
                       </p>
                     </div>
                   </div>
                   <div className="flex justify-between text-xs text-muted mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                     <div>
                       <p>Qty: {pos.quantity}</p>
-                      <p>Avg: {pos.avg_buy_price.toFixed(2)} €</p>
+                      <p>Avg: {formatCurrency(pos.avg_buy_price)}</p>
                     </div>
                     <div className="text-right">
-                      <p>Current: {pos.current_price.toFixed(2)} €</p>
+                      <p>Current: {formatCurrency(pos.current_price)}</p>
                       {/* EDIT PRICE BUTTON */}
                       <button 
                         onClick={() => startEditing(pos.symbol, pos.current_price)}
@@ -396,7 +397,7 @@ export default function Home() {
                         {pos.symbol}
                       </td>
                       <td className="px-4 py-4 text-right text-muted font-mono tabular-nums whitespace-nowrap">{pos.quantity}</td>
-                      <td className="px-4 py-4 text-right text-muted font-mono tabular-nums whitespace-nowrap">{pos.avg_buy_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      <td className="px-4 py-4 text-right text-muted font-mono tabular-nums whitespace-nowrap">{formatCurrency(pos.avg_buy_price)}</td>
                       
                       {/* CÉLULA DE PREÇO ATUAL EDITÁVEL */}
                       <td className="px-4 py-4 text-right text-muted font-mono tabular-nums whitespace-nowrap">
@@ -425,15 +426,15 @@ export default function Home() {
                           </div>
                         ) : (
                           <div className="group flex items-center justify-end gap-2 cursor-pointer" onClick={() => startEditing(pos.symbol, pos.current_price)}>
-                            <span>{pos.current_price.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</span>
+                            <span>{formatCurrency(pos.current_price)}</span>
                             <span className="opacity-0 group-hover:opacity-100 text-xs text-accent">✎</span>
                           </div>
                         )}
                       </td>
 
-                      <td className="px-4 py-4 text-right font-bold text-darkText dark:text-lightText tabular-nums whitespace-nowrap">{pos.total_value.toFixed(2)} €</td>
+                      <td className="px-4 py-4 text-right font-bold text-darkText dark:text-lightText tabular-nums whitespace-nowrap">{formatCurrency(pos.total_value)}</td>
                       <td className={`px-4 py-4 text-right font-bold tabular-nums whitespace-nowrap ${pos.profit_loss >= 0 ? 'text-success' : 'text-error'}`}>
-                        {pos.profit_loss > 0 ? '+' : ''}{pos.profit_loss.toFixed(2)} €
+                        {pos.profit_loss > 0 ? '+' : ''}{formatCurrency(pos.profit_loss)}
                       </td>
                     </tr>
                   ))}

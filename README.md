@@ -51,28 +51,39 @@ O projeto segue uma arquitetura cliente-servidor moderna:
 *   **Resumo Financeiro**: Património Total, Liquidez e Total Investido.
 *   **Evolução Patrimonial**: Gráfico de longo prazo com eixo duplo (Património vs Fluxo de Caixa) e filtros inteligentes (6M, YTD, 1A, Tudo).
 *   **Gestão de Ativos**: Tabela consolidada de investimentos com **edição manual de preços** em tempo real.
+*   **Smart Shopping**: Widget de análise de compras (Preço/Unidade) com bloqueio Freemium.
 
 ### 2. Transações (`/transactions`)
-*   **Extrato Completo**: Tabela paginada com ordenação e filtros.
-*   **Nova Transação**: Formulário inteligente que deteta investimentos (compra/venda de ativos) e valida datas.
+*   **Extrato Completo**: Tabela paginada com ordenação e filtros avançados.
+*   **Filtros Granulares**: Filtragem por Categoria, Subcategoria, Tipo e **Tags**.
+*   **Visualização**: Chips coloridos para Tags e suporte a Subcategorias.
+*   **Nova Transação**: Formulário inteligente que deteta investimentos e suporta recorrência.
 
-### 3. Centro de Controlo (`/settings`)
+### 3. Ferramentas Financeiras (`/calculator`) 🛠️
+*   **Calculadora de Juros Compostos**: Simulação de crescimento de investimento com aportes mensais.
+*   **Calculadora de Fundo de Emergência**: Análise de gastos essenciais para definir metas de poupança (3 a 12 meses).
+*   *Nota: Funcionalidades protegidas pelo sistema Freemium.*
+
+### 4. Centro de Controlo (`/settings`)
 *   **Gestão de Contas**: Criar e apagar contas bancárias/investimento.
 *   **Categorias**: Gestão hierárquica de categorias e subcategorias.
-*   **Regras de Automação 🤖**: Criar regras para categorizar transações automaticamente com base na descrição.
+*   **Tags 🏷️**: Criação e gestão de etiquetas coloridas para organização transversal.
+*   **Regras de Automação 🤖**: Criar regras para categorizar transações automaticamente.
 *   **Dados 💾**:
     *   **Importação**: Upload de ficheiros CSV/Excel com deteção de conta.
     *   **Exportação**: Download de todo o histórico em CSV.
-    *   **Template**: Gerador de templates de importação com exemplos reais.
 
-### 4. Área de Admin (`/admin`)
+### 5. Área de Admin (`/admin`)
 *   *Acesso restrito a utilizadores com role 'admin'.*
 *   **Métricas**: Total de utilizadores e transações.
 *   **Gestão de Utilizadores**: Listagem e alteração de permissões (Básico/Premium/Admin).
 
-### 5. Mobile Experience 📱
-*   **Bottom Navigation**: Barra de navegação inferior para fácil acesso em telemóveis.
-*   **Layout Responsivo**: Gráficos e tabelas adaptáveis a ecrãs pequenos.
+### 6. UX & Design
+*   **Layout Híbrido**: Sidebar fixa para Desktop e Bottom Navigation para Mobile.
+*   **Multi-Moeda**: Suporte dinâmico para EUR, USD, GBP e BRL (configurável no perfil).
+*   **Modo Escuro**: Suporte nativo a Dark Mode.
+*   **Notificações**: Sistema de Toasts centralizado para feedback de ações (Sucesso/Erro/Aviso).
+*   **Freemium**: Bloqueio visual elegante (Blur + Modal Global) para funcionalidades Premium, incentivando o upgrade sem esconder a funcionalidade.
 
 ## 🔌 Integração com API
 
@@ -81,8 +92,8 @@ O frontend comunica com a API em `http://127.0.0.1:8000`.
 **Endpoints Principais:**
 *   `/portfolio`: Resumo e posições.
 *   `/transactions`: CRUD de transações (paginado).
-*   `/analytics/evolution`: Dados para gráficos.
-*   `/rules`: Regras de automação.
+*   `/calculators/*`: Ferramentas de cálculo financeiro.
+*   `/analytics/*`: Dados para gráficos e análises.
 *   `/admin/*`: Endpoints de administração.
 
 **Autenticação**: JWT (Bearer Token) armazenado no `localStorage`.

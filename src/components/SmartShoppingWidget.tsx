@@ -3,15 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSmartShoppingSummary } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SmartShoppingWidget() {
+  const { user } = useAuth();
   const [period, setPeriod] = useState<'month' | 'year' | 'all'>('all');
   const [page, setPage] = useState(1);
+
+  const isPremium = user?.role === 'admin' || user?.role === 'premium';
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['smart-shopping-summary', period, page],
     queryFn: () => getSmartShoppingSummary(period, page, 5), // Size 5
-    retry: false
+    retry: false,
+    enabled: !!user && isPremium // SÓ EXECUTA SE FOR PREMIUM
   });
 
   const handlePeriodChange = (newPeriod: 'month' | 'year' | 'all') => {
@@ -23,6 +28,33 @@ export default function SmartShoppingWidget() {
     if (data) console.log("🔍 SMART SHOPPING DATA:", data);
     if (error) console.error("❌ SMART SHOPPING ERROR:", error);
   }, [data, error]);
+
+  // Se não for premium, mostra um estado "fake" ou vazio para ficar bonito atrás do blur
+  if (!isPremium) {
+    return (
+      <div className="bg-white dark:bg-primary p-6 rounded-xl shadow-soft border border-secondary dark:border-gray-800 flex flex-col h-full opacity-50">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-heading font-bold text-darkText dark:text-lightText flex items-center gap-2">
+            🛒 Smart Savings
+          </h2>
+        </div>
+        <div className="mb-6 text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider">Total Saved</span>
+          <div className="text-3xl font-heading font-bold mt-1 text-success">+124.50 €</div>
+        </div>
+        <div className="flex-1 space-y-3">
+           <div className="flex justify-between items-center p-3 bg-secondary/50 dark:bg-gray-800/50 rounded-lg">
+              <div><p className="font-bold text-sm">Coffee Beans</p><p className="text-xs text-muted">12 purchases</p></div>
+              <div className="font-bold text-sm text-success">+15.20 €</div>
+           </div>
+           <div className="flex justify-between items-center p-3 bg-secondary/50 dark:bg-gray-800/50 rounded-lg">
+              <div><p className="font-bold text-sm">Olive Oil</p><p className="text-xs text-muted">4 purchases</p></div>
+              <div className="font-bold text-sm text-success">+8.40 €</div>
+           </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

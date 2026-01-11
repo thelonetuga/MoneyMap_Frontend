@@ -239,4 +239,15 @@ export const getAdminStats = async (): Promise<{ total_users: number; total_tran
   return response.data as { total_users: number; total_transactions: number };
 };
 
+// --- CALCULADORAS ---
+export const calculateCompoundInterest = async (data: { initial_principal: number; monthly_contribution: number; annual_interest_rate: number; years: number }): Promise<any> => {
+  const response = await api.post('/calculators/compound-interest', data);
+  return response.data;
+};
+
+export const calculateEmergencyFund = async (data: { category_ids: number[]; months_to_cover: number }): Promise<any> => {
+  const response = await api.post('/calculators/emergency-fund', data);
+  return response.data;
+};
+
 export default api;

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api, { transferFunds } from '@/services/api';
+import { useNotification } from '@/context/NotificationContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ModalProps {
 }
 
 export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps) {
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
   
@@ -38,19 +40,19 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
     setLoading(true);
 
     if (!sourceId || !destId || !amount) {
-      alert('Please fill all required fields.');
+      showNotification('warning', 'Please fill all required fields.');
       setLoading(false);
       return;
     }
 
     if (sourceId === destId) {
-      alert('Source and Destination accounts cannot be the same.');
+      showNotification('warning', 'Source and Destination accounts cannot be the same.');
       setLoading(false);
       return;
     }
 
     if (Number(amount) <= 0) {
-      alert('Amount must be positive.');
+      showNotification('warning', 'Amount must be positive.');
       setLoading(false);
       return;
     }
@@ -64,12 +66,12 @@ export default function TransferModal({ isOpen, onClose, onSuccess }: ModalProps
         description
       });
       
-      alert('Transfer successful! 💸');
+      showNotification('success', 'Transfer successful! 💸');
       onSuccess();
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.detail || 'Error processing transfer.');
+      showNotification('error', err.response?.data?.detail || 'Error processing transfer.');
     } finally {
       setLoading(false);
     }

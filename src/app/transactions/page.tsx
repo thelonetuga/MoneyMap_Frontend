@@ -3,15 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getTransactions } from '@/services/api';
+import { getTransactions, getTags } from '@/services/api';
 import { TransactionQueryParams, TransactionResponse } from '@/types/models';
 import api from '@/services/api';
 import EditTransactionModal from '@/components/EditTransactionModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { useAuth } from '@/context/AuthContext';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function TransactionsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user, formatCurrency } = useAuth();
+  const { showNotification } = useNotification();
   
   // Estados de Filtro e Paginação
   const [page, setPage] = useState(1);
@@ -20,6 +24,8 @@ export default function TransactionsPage() {
   // NOVOS FILTROS
   const [showFilters, setShowFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterSubCategory, setFilterSubCategory] = useState('');
+  const [filterTag, setFilterTag] = useState(''); // NOVO
   const [filterType, setFilterType] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -44,18 +50,35 @@ export default function TransactionsPage() {
     if (!token) { router.push('/login'); }
   }, [router]);
 
-  // Query de Categorias e Tipos
+  // Query de Categorias, Tipos e Tags
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => api.get('/categories/').then(res => res.data) });
   const { data: types } = useQuery({ queryKey: ['types'], queryFn: () => api.get('/lookups/transaction-types/').then(res => res.data) });
+  const { data: tags } = useQuery({ 
+    queryKey: ['tags'], 
+    queryFn: getTags,
+    enabled: !!user && (user.role === 'admin' || user.role === 'premium')
+  });
+
+  // Subcategorias filtradas (CORRIGIDO)
+  const subcategories = (Array.isArray(categories) && filterCategory)
+    ? categories.find((c: any) => c.id === Number(filterCategory))?.subcategories || []
+    : [];
+
+  // Reset Subcategory when Category changes
+  useEffect(() => {
+    setFilterSubCategory('');
+  }, [filterCategory]);
 
   // Query de Transações
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['transactions', page, sortBy, filterCategory, filterType, startDate, endDate],
+    queryKey: ['transactions', page, sortBy, filterCategory, filterSubCategory, filterTag, filterType, startDate, endDate],
     queryFn: () => getTransactions({ 
       page, 
       size: 20, 
       sort_by: sortBy,
       category_id: filterCategory ? Number(filterCategory) : undefined,
+      sub_category_id: filterSubCategory ? Number(filterSubCategory) : undefined,
+      tag_id: filterTag ? Number(filterTag) : undefined, // NOVO
       transaction_type_id: filterType ? Number(filterType) : undefined,
       start_date: startDate || undefined,
       end_date: endDate || undefined
@@ -66,6 +89,8 @@ export default function TransactionsPage() {
   // Reset Filters
   const clearFilters = () => {
     setFilterCategory('');
+    setFilterSubCategory('');
+    setFilterTag('');
     setFilterType('');
     setStartDate('');
     setEndDate('');
@@ -107,9 +132,10 @@ export default function TransactionsPage() {
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       await queryClient.invalidateQueries({ queryKey: ['portfolio'] });
       setSelectedIds([]);
+      showNotification('success', 'Transactions deleted successfully.');
     } catch (err) {
       console.error(err);
-      alert('Error deleting transactions.');
+      showNotification('error', 'Error deleting transactions.');
     } finally {
       setIsBulkDeleting(false);
     }
@@ -132,9 +158,10 @@ export default function TransactionsPage() {
       if (selectedIds.includes(id)) {
         setSelectedIds(selectedIds.filter(sid => sid !== id));
       }
+      showNotification('success', 'Transaction deleted successfully.');
     } catch (err) {
       console.error(err);
-      alert('Error deleting transaction.');
+      showNotification('error', 'Error deleting transaction.');
     }
   };
 
@@ -160,6 +187,8 @@ export default function TransactionsPage() {
   if (isError) {
     return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-red-500">Error loading transactions.</div>;
   }
+
+  const canUseTags = user?.role === 'admin' || user?.role === 'premium';
 
   return (
     <>
@@ -217,7 +246,7 @@ export default function TransactionsPage() {
 
           {/* BARRA DE FILTROS (COLLAPSIBLE) */}
           {showFilters && (
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6 grid grid-cols-1 md:grid-cols-7 gap-4 animate-fade-in">
               {/* Categoria */}
               <div className="col-span-1">
                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Category</label>
@@ -230,6 +259,35 @@ export default function TransactionsPage() {
                   {Array.isArray(categories) && categories.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
               </div>
+
+              {/* Subcategoria */}
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Subcategory</label>
+                <select 
+                  value={filterSubCategory} 
+                  onChange={(e) => { setFilterSubCategory(e.target.value); setPage(1); }}
+                  disabled={!filterCategory || subcategories.length === 0}
+                  className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none disabled:opacity-50"
+                >
+                  <option value="">All</option>
+                  {subcategories.map((sub: any) => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+                </select>
+              </div>
+
+              {/* Tag (NOVO) */}
+              {canUseTags && (
+                <div className="col-span-1">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tag</label>
+                  <select 
+                    value={filterTag} 
+                    onChange={(e) => { setFilterTag(e.target.value); setPage(1); }}
+                    className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:text-white outline-none"
+                  >
+                    <option value="">All</option>
+                    {tags?.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* Tipo */}
               <div className="col-span-1">
@@ -272,7 +330,7 @@ export default function TransactionsPage() {
                   onClick={clearFilters}
                   className="w-full py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
                 >
-                  Clear Filters
+                  Clear
                 </button>
               </div>
             </div>
@@ -304,11 +362,23 @@ export default function TransactionsPage() {
                   </div>
                   <div className="text-right">
                     <p className={`font-bold ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
+                      {formatCurrency(tx.amount)}
                     </p>
                     {tx.symbol && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded">{tx.symbol}</span>}
                   </div>
                 </div>
+                
+                {/* TAGS MOBILE */}
+                {tx.tags && tx.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {tx.tags.map(tag => (
+                      <span key={tag.id} className="text-[10px] px-2 py-0.5 rounded-full text-white font-bold" style={{ backgroundColor: tag.color }}>
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {tx.category?.name || '-'}
@@ -334,6 +404,7 @@ export default function TransactionsPage() {
                     <th className="px-6 py-3 whitespace-nowrap">Date</th>
                     <th className="px-6 py-3 whitespace-nowrap">Description</th>
                     <th className="px-6 py-3 whitespace-nowrap">Category</th>
+                    <th className="px-6 py-3 whitespace-nowrap">Subcategory</th>
                     <th className="px-6 py-3 whitespace-nowrap">Account</th>
                     <th className="px-6 py-3 text-right whitespace-nowrap">Amount</th>
                     <th className="px-6 py-3 text-center whitespace-nowrap">Actions</th>
@@ -344,24 +415,29 @@ export default function TransactionsPage() {
                     <tr key={tx.id} className={`border-b dark:border-gray-700 transition-colors ${selectedIds.includes(tx.id) ? 'bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                       <td className="p-4 w-4"><input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelectOne(tx.id)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" /></td>
                       <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">{tx.date}</td>
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{tx.description}{tx.symbol && (<span className="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-semibold px-2 py-0.5 rounded">{tx.symbol}</span>)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {tx.category?.name || '-'}
-                        {tx.sub_category && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500 block">
-                            ↳ {tx.sub_category.name}
-                          </span>
-                        )}
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                        <div>{tx.description}</div>
+                        {/* TAGS DESKTOP */}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {tx.symbol && (<span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-[10px] font-semibold px-2 py-0.5 rounded">{tx.symbol}</span>)}
+                          {tx.tags && tx.tags.map(tag => (
+                            <span key={tag.id} className="text-[10px] px-2 py-0.5 rounded-full text-white font-bold" style={{ backgroundColor: tag.color }}>
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{tx.category?.name || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-400 dark:text-gray-500">{tx.sub_category?.name || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{tx.account.name}</td>
-                      <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</td>
+                      <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${tx.transaction_type.name.toLowerCase().includes('receita') || tx.transaction_type.name.toLowerCase().includes('venda') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(tx.amount)}</td>
                       <td className="px-6 py-4 text-center flex justify-center gap-2 whitespace-nowrap">
                         <button onClick={() => openEditModal(tx)} className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1" title="Edit">✏️</button>
                         <button onClick={() => handleDeleteOneClick(tx.id)} className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1" title="Delete">🗑️</button>
                       </td>
                     </tr>
                   ))}
-                  {data?.items.length === 0 && (<tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400 italic">No transactions found.</td></tr>)}
+                  {data?.items.length === 0 && (<tr><td colSpan={8} className="px-6 py-8 text-center text-gray-400 italic">No transactions found.</td></tr>)}
                 </tbody>
               </table>
             </div>

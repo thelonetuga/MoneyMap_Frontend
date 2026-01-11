@@ -4,12 +4,35 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="Fix mobile view">
+    <list default="true" id="c57e819a-433e-4305-b64c-4ac6aaa53d39" name="Changes" comment="MoneyMap v5">
+      <change afterPath="$PROJECT_DIR$/src/app/calculator/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/AppLayout.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/CompoundInterestCalculator.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/EmergencyFundCalculator.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/PremiumLock.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/Sidebar.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/context/NotificationContext.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/context/PremiumContext.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/add/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/add/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/admin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/admin/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/imports/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/imports/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/login/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/profile/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/profile/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/settings/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/settings/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/transactions/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/transactions/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/BottomNav.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/BottomNav.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/EvolutionChart.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/EvolutionChart.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/LandingPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/LandingPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/EditTransactionModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/EditTransactionModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Navbar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/SmartShoppingWidget.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SmartShoppingWidget.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/TransferModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/TransferModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/context/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/context/AuthContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/models.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/models.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,12 +48,12 @@
     &quot;assignee&quot;: &quot;thelonetuga&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/thelonetuga/MoneyMap_Frontend.git&quot;,
-    &quot;accountId&quot;: &quot;cf51e565-944a-4078-83d9-2a466755f9da&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/thelonetuga/MoneyMap_Frontend.git",
+    "accountId": "f2814cb0-a972-4b59-91b0-2a4207700ffe"
   }
-}</component>
+}]]></component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -100,6 +123,7 @@
       <workItem from="1768008673975" duration="315000" />
       <workItem from="1768009418158" duration="88000" />
       <workItem from="1768047776132" duration="8765000" />
+      <workItem from="1768078154327" duration="11353000" />
     </task>
     <task id="LOCAL-00001" summary="reset password">
       <option name="closed" value="true" />
@@ -185,6 +209,7 @@
     <MESSAGE value="New lading page and change language to english v1.1" />
     <MESSAGE value="mensagem de erro no login e validacao de campos no registo" />
     <MESSAGE value="Fix mobile view" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix mobile view" />
+    <MESSAGE value="MoneyMap v5" />
+    <option name="LAST_COMMIT_MESSAGE" value="MoneyMap v5" />
   </component>
 </project>

@@ -6,6 +6,8 @@ import api, { deleteAccount, getRules, createRule, deleteRule, exportTransaction
 import { Tag, RecurringTransaction, Rule } from '@/types/models';
 import { useAuth } from '@/context/AuthContext';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { useNotification } from '@/context/NotificationContext';
+import PremiumLock from '@/components/PremiumLock';
 
 // --- INTERFACES ---
 interface SubCategory {
@@ -29,6 +31,7 @@ interface Account {
 export default function SettingsPage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
+    const { showNotification } = useNotification();
     const [loading, setLoading] = useState(true); // Usado para o estado local de carregamento de dados
     const [activeTab, setActiveTab] = useState<'accounts' | 'categories' | 'tags' | 'recurring' | 'rules' | 'data'>('accounts');
 
@@ -62,7 +65,6 @@ export default function SettingsPage() {
     // Import/Export State
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importAccount, setImportAccount] = useState<string>('');
-    const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
     const [importLoading, setImportLoading] = useState(false);
 
     // Modal State
@@ -127,7 +129,8 @@ export default function SettingsPage() {
             });
             setAccounts([...accounts, res.data]);
             setNewAccName(''); setNewAccBalance('');
-        } catch (err) { alert('Error creating account.'); }
+            showNotification('success', 'Account created successfully!');
+        } catch (err) { showNotification('error', 'Error creating account.'); }
     };
 
     const handleDeleteAccountClick = (id: number) => {
@@ -143,9 +146,10 @@ export default function SettingsPage() {
         try {
             await deleteAccount(id);
             setAccounts(accounts.filter(acc => acc.id !== id));
+            showNotification('success', 'Account deleted successfully.');
         } catch (err) { 
             console.error(err);
-            alert('Error deleting account. Check for dependencies.'); 
+            showNotification('error', 'Error deleting account. Check for dependencies.'); 
         }
     };
 
@@ -160,8 +164,8 @@ export default function SettingsPage() {
             await updateAccountBalance(id, Number(editBalanceValue));
             setAccounts(accounts.map(acc => acc.id === id ? { ...acc, current_balance: Number(editBalanceValue) } : acc));
             setEditingBalanceId(null);
-            alert('Balance adjusted successfully! An adjustment transaction was created.');
-        } catch (err) { console.error(err); alert('Error updating balance.'); }
+            showNotification('success', 'Balance adjusted successfully! An adjustment transaction was created.');
+        } catch (err) { console.error(err); showNotification('error', 'Error updating balance.'); }
     };
 
     const handleCreateCategory = async (e: React.FormEvent) => {
@@ -171,7 +175,8 @@ export default function SettingsPage() {
             const res = await api.post('/categories/', { name: newCatName });
             setCategories([...categories, { ...res.data, subcategories: [] }]);
             setNewCatName('');
-        } catch (err) { alert('Error creating category.'); }
+            showNotification('success', 'Category created successfully!');
+        } catch (err) { showNotification('error', 'Error creating category.'); }
     };
 
     const handleCreateSubCategory = async (catId: number) => {
@@ -185,7 +190,8 @@ export default function SettingsPage() {
                 return cat;
             }));
             setNewSubName('');
-        } catch (err) { alert('Error creating subcategory.'); }
+            showNotification('success', 'Subcategory created successfully!');
+        } catch (err) { showNotification('error', 'Error creating subcategory.'); }
     };
 
     const handleDeleteSubCategoryClick = (subId: number, catId: number) => {
@@ -206,7 +212,8 @@ export default function SettingsPage() {
                 }
                 return cat;
             }));
-        } catch (err) { alert('Cannot delete: this subcategory has associated transactions.'); }
+            showNotification('success', 'Subcategory deleted successfully.');
+        } catch (err) { showNotification('error', 'Cannot delete: this subcategory has associated transactions.'); }
     };
 
     const handleDeleteCategoryClick = (id: number) => {
@@ -222,7 +229,8 @@ export default function SettingsPage() {
         try {
             await api.delete(`/categories/${id}/`); 
             setCategories(categories.filter(c => c.id !== id));
-        } catch (err) { alert('Error: Check if the category has transactions.'); }
+            showNotification('success', 'Category deleted successfully.');
+        } catch (err) { showNotification('error', 'Error: Check if the category has transactions.'); }
     };
 
     // --- TAGS ---
@@ -233,7 +241,8 @@ export default function SettingsPage() {
             const newTag = await createTag(newTagName, newTagColor);
             setTags([...tags, newTag]);
             setNewTagName('');
-        } catch (err) { alert('Error creating tag.'); }
+            showNotification('success', 'Tag created successfully!');
+        } catch (err) { showNotification('error', 'Error creating tag.'); }
     };
 
     const handleDeleteTagClick = (id: number) => {
@@ -249,7 +258,8 @@ export default function SettingsPage() {
         try {
             await deleteTag(id);
             setTags(tags.filter(t => t.id !== id));
-        } catch (err) { alert('Error deleting tag.'); }
+            showNotification('success', 'Tag deleted successfully.');
+        } catch (err) { showNotification('error', 'Error deleting tag.'); }
     };
 
     // --- RECURRING ---
@@ -266,7 +276,8 @@ export default function SettingsPage() {
         try {
             await deleteRecurringTransaction(id);
             setRecurring(recurring.filter(r => r.id !== id));
-        } catch (err) { alert('Error cancelling recurrence.'); }
+            showNotification('success', 'Recurring transaction cancelled.');
+        } catch (err) { showNotification('error', 'Error cancelling recurrence.'); }
     };
 
     // --- RULES ---
@@ -279,7 +290,8 @@ export default function SettingsPage() {
             setRules([...rules, { ...newRule, category_name: catName }]);
             setNewRulePattern('');
             setNewRuleCatId('');
-        } catch (err) { alert('Error creating rule.'); }
+            showNotification('success', 'Rule created successfully!');
+        } catch (err) { showNotification('error', 'Error creating rule.'); }
     };
 
     const handleDeleteRuleClick = (id: number) => {
@@ -295,7 +307,8 @@ export default function SettingsPage() {
         try {
             await deleteRule(id);
             setRules(rules.filter(r => r.id !== id));
-        } catch (err) { alert('Error deleting rule.'); }
+            showNotification('success', 'Rule deleted successfully.');
+        } catch (err) { showNotification('error', 'Error deleting rule.'); }
     };
 
     // --- IMPORT / EXPORT ---
@@ -322,7 +335,6 @@ export default function SettingsPage() {
         if (!importFile || !importAccount) return;
 
         setImportLoading(true);
-        setImportStatus(null);
 
         const formData = new FormData();
         formData.append('file', importFile);
@@ -331,11 +343,11 @@ export default function SettingsPage() {
             const res = await api.post(`/imports/upload/?account_id=${importAccount}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setImportStatus({ type: 'success', msg: `Success! ${res.data.added} transactions imported.` });
+            showNotification('success', `Success! ${res.data.added} transactions imported.`);
             setImportFile(null); 
         } catch (err: any) {
             console.error(err);
-            setImportStatus({ type: 'error', msg: err.response?.data?.detail || 'Error importing file.' });
+            showNotification('error', err.response?.data?.detail || 'Error importing file.');
         } finally {
             setImportLoading(false);
         }
@@ -351,7 +363,8 @@ export default function SettingsPage() {
             document.body.appendChild(a);
             a.click();
             a.remove();
-        } catch (err) { alert('Error exporting data.'); }
+            showNotification('success', 'Export started successfully.');
+        } catch (err) { showNotification('error', 'Error exporting data.'); }
     };
 
     // --- UI ---
@@ -382,10 +395,10 @@ export default function SettingsPage() {
             <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
                 <button onClick={() => setActiveTab('accounts')} className={tabClass('accounts')}>🏦 Accounts</button>
                 <button onClick={() => setActiveTab('categories')} className={tabClass('categories')}>🏷️ Categories</button>
-                {canAccessPremium && <button onClick={() => setActiveTab('tags')} className={tabClass('tags')}>🏷️ Tags</button>}
-                {canAccessPremium && <button onClick={() => setActiveTab('recurring')} className={tabClass('recurring')}>🔄 Recurring</button>}
-                {canAccessPremium && <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Rules</button>}
-                {canAccessPremium && <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Data</button>}
+                <button onClick={() => setActiveTab('tags')} className={tabClass('tags')}>🏷️ Tags</button>
+                <button onClick={() => setActiveTab('recurring')} className={tabClass('recurring')}>🔄 Recurring</button>
+                <button onClick={() => setActiveTab('rules')} className={tabClass('rules')}>🤖 Rules</button>
+                <button onClick={() => setActiveTab('data')} className={tabClass('data')}>💾 Data</button>
             </div>
 
             {/* TAB ACCOUNTS */}
@@ -469,152 +482,154 @@ export default function SettingsPage() {
             )}
 
             {/* TAB TAGS */}
-            {activeTab === 'tags' && canAccessPremium && (
-                <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                        {tags.map(tag => (
-                            <div key={tag.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color }}></div>
-                                    <p className="font-bold text-gray-800 dark:text-white">{tag.name}</p>
+            {activeTab === 'tags' && (
+                <PremiumLock isLocked={!canAccessPremium}>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            {tags.map(tag => (
+                                <div key={tag.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                                        <p className="font-bold text-gray-800 dark:text-white">{tag.name}</p>
+                                    </div>
+                                    <button onClick={() => handleDeleteTagClick(tag.id)} className="text-gray-300 hover:text-red-500">×</button>
                                 </div>
-                                <button onClick={() => handleDeleteTagClick(tag.id)} className="text-gray-300 hover:text-red-500">×</button>
-                            </div>
-                        ))}
-                        {tags.length === 0 && <p className="text-gray-400 italic text-center">No tags created.</p>}
+                            ))}
+                            {tags.length === 0 && <p className="text-gray-400 italic text-center">No tags created.</p>}
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
+                            <h2 className="text-xl font-bold text-accent mb-6">+ New Tag</h2>
+                            <form onSubmit={handleCreateTag} className="space-y-4">
+                                <input placeholder="Name (e.g. Vacation)" value={newTagName} onChange={e => setNewTagName(e.target.value)} className={inputClass} />
+                                <div className="flex items-center gap-2">
+                                    <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="h-12 w-12 rounded cursor-pointer border-none" />
+                                    <span className="text-sm text-muted">Tag Color</span>
+                                </div>
+                                <button type="submit" className={buttonClass}>Create Tag</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
-                        <h2 className="text-xl font-bold text-accent mb-6">+ New Tag</h2>
-                        <form onSubmit={handleCreateTag} className="space-y-4">
-                            <input placeholder="Name (e.g. Vacation)" value={newTagName} onChange={e => setNewTagName(e.target.value)} className={inputClass} />
-                            <div className="flex items-center gap-2">
-                                <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="h-12 w-12 rounded cursor-pointer border-none" />
-                                <span className="text-sm text-muted">Tag Color</span>
-                            </div>
-                            <button type="submit" className={buttonClass}>Create Tag</button>
-                        </form>
-                    </div>
-                </div>
+                </PremiumLock>
             )}
 
             {/* TAB RECURRING */}
-            {activeTab === 'recurring' && canAccessPremium && (
-                <div className="space-y-4">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 mb-6">
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                            ℹ️ Here you can manage your automatic transactions. To create a new one, use the <b>"Recurring"</b> option when adding a transaction.
-                        </p>
-                    </div>
-                    
-                    <div className="grid gap-4">
-                        {recurring.map(rec => (
-                            <div key={rec.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold text-gray-800 dark:text-white">{rec.description}</p>
-                                        <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-muted uppercase">{rec.frequency === 'monthly' ? 'Monthly' : rec.frequency === 'weekly' ? 'Weekly' : rec.frequency === 'yearly' ? 'Yearly' : 'Daily'}</span>
+            {activeTab === 'recurring' && (
+                <PremiumLock isLocked={!canAccessPremium}>
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 mb-6">
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                ℹ️ Here you can manage your automatic transactions. To create a new one, use the <b>"Recurring"</b> option when adding a transaction.
+                            </p>
+                        </div>
+                        
+                        <div className="grid gap-4">
+                            {recurring.map(rec => (
+                                <div key={rec.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-gray-800 dark:text-white">{rec.description}</p>
+                                            <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-muted uppercase">{rec.frequency === 'monthly' ? 'Monthly' : rec.frequency === 'weekly' ? 'Weekly' : rec.frequency === 'yearly' ? 'Yearly' : 'Daily'}</span>
+                                        </div>
+                                        <p className="text-sm text-muted">{rec.amount.toFixed(2)} € • Next: {rec.next_date}</p>
                                     </div>
-                                    <p className="text-sm text-muted">{rec.amount.toFixed(2)} € • Next: {rec.next_date}</p>
+                                    <button 
+                                        onClick={() => handleDeleteRecurringClick(rec.id)} 
+                                        className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => handleDeleteRecurringClick(rec.id)} 
-                                    className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        ))}
-                        {recurring.length === 0 && <p className="text-gray-400 italic text-center py-8">No active recurring transactions.</p>}
+                            ))}
+                            {recurring.length === 0 && <p className="text-gray-400 italic text-center py-8">No active recurring transactions.</p>}
+                        </div>
                     </div>
-                </div>
+                </PremiumLock>
             )}
 
             {/* TAB RULES */}
-            {activeTab === 'rules' && canAccessPremium && (
-                <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                        {rules.map(rule => (
-                            <div key={rule.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">If contains:</p>
-                                    <p className="font-bold text-gray-800 dark:text-white">"{rule.pattern}"</p>
+            {activeTab === 'rules' && (
+                <PremiumLock isLocked={!canAccessPremium}>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            {rules.map(rule => (
+                                <div key={rule.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">If contains:</p>
+                                        <p className="font-bold text-gray-800 dark:text-white">"{rule.pattern}"</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-lg">
+                                            ➜ {rule.category_name || categories.find(c => c.id === rule.category_id)?.name || 'Category'}
+                                        </span>
+                                        <button onClick={() => handleDeleteRuleClick(rule.id)} className="text-gray-300 hover:text-red-500">×</button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-lg">
-                                        ➜ {rule.category_name || categories.find(c => c.id === rule.category_id)?.name || 'Category'}
-                                    </span>
-                                    <button onClick={() => handleDeleteRuleClick(rule.id)} className="text-gray-300 hover:text-red-500">×</button>
-                                </div>
-                            </div>
-                        ))}
-                        {rules.length === 0 && <p className="text-gray-400 italic text-center">No automation rules.</p>}
+                            ))}
+                            {rules.length === 0 && <p className="text-gray-400 italic text-center">No automation rules.</p>}
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
+                            <h2 className="text-xl font-bold text-accent mb-6">New Rule 🤖</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Automatically categorize imported transactions.</p>
+                            <form onSubmit={handleCreateRule} className="space-y-4">
+                                <input placeholder="Text to match (e.g. Uber)" value={newRulePattern} onChange={e => setNewRulePattern(e.target.value)} className={inputClass} />
+                                <select value={newRuleCatId} onChange={e => setNewRuleCatId(e.target.value)} className={inputClass}>
+                                    <option value="">Select Category...</option>
+                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                <button type="submit" className={buttonClass}>Create Rule</button>
+                            </form>
+                        </div>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
-                        <h2 className="text-xl font-bold text-accent mb-6">New Rule 🤖</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Automatically categorize imported transactions.</p>
-                        <form onSubmit={handleCreateRule} className="space-y-4">
-                            <input placeholder="Text to match (e.g. Uber)" value={newRulePattern} onChange={e => setNewRulePattern(e.target.value)} className={inputClass} />
-                            <select value={newRuleCatId} onChange={e => setNewRuleCatId(e.target.value)} className={inputClass}>
-                                <option value="">Select Category...</option>
-                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                            <button type="submit" className={buttonClass}>Create Rule</button>
-                        </form>
-                    </div>
-                </div>
+                </PremiumLock>
             )}
 
             {/* TAB DADOS (IMPORT/EXPORT) */}
-            {activeTab === 'data' && canAccessPremium && (
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* IMPORT */}
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-gray-700 dark:text-white">Import Statement 📂</h2>
-                            <button onClick={handleDownloadTemplate} className="text-accent dark:text-accent text-xs font-bold hover:underline bg-accent/10 px-3 py-1 rounded-full">
-                                📥 Download Template
+            {activeTab === 'data' && (
+                <PremiumLock isLocked={!canAccessPremium}>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* IMPORT */}
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-gray-700 dark:text-white">Import Statement 📂</h2>
+                                <button onClick={handleDownloadTemplate} className="text-accent dark:text-accent text-xs font-bold hover:underline bg-accent/10 px-3 py-1 rounded-full">
+                                    📥 Download Template
+                                </button>
+                            </div>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Upload .CSV or .XLSX files.</p>
+
+                            <form onSubmit={handleImportUpload} className="space-y-6">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 ml-1">To Account</label>
+                                    <select value={importAccount} onChange={(e) => setImportAccount(e.target.value)} className={inputClass}>
+                                        {accounts.map(acc => (<option key={acc.id} value={acc.id}>{acc.name}</option>))}
+                                    </select>
+                                </div>
+
+                                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer relative">
+                                    <input type="file" accept=".csv, .xlsx" onChange={(e) => setImportFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    <div className="space-y-2">
+                                        <span className="text-4xl">📄</span>
+                                        <p className="font-medium text-gray-600 dark:text-gray-300">{importFile ? importFile.name : "Drag or click"}</p>
+                                    </div>
+                                </div>
+
+                                <button type="submit" disabled={!importFile || importLoading || !importAccount} className={`w-full py-4 rounded-2xl text-primary font-bold transition-all ${!importFile || importLoading ? 'bg-gray-300 dark:bg-gray-700' : 'bg-accent hover:bg-accent/90 shadow-lg'}`}>
+                                    {importLoading ? 'Processing...' : 'Import Now'}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* EXPORT */}
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
+                            <h2 className="text-xl font-bold text-gray-700 dark:text-white mb-2">Export Data 📤</h2>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Backup all your transactions.</p>
+                            
+                            <button onClick={handleExport} className="w-full py-4 bg-gray-800 dark:bg-gray-700 text-white font-bold rounded-2xl hover:bg-black dark:hover:bg-gray-600 transition-all shadow-lg flex items-center justify-center gap-2">
+                                <span>Download CSV</span>
                             </button>
                         </div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Upload .CSV or .XLSX files.</p>
-
-                        <form onSubmit={handleImportUpload} className="space-y-6">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 ml-1">To Account</label>
-                                <select value={importAccount} onChange={(e) => setImportAccount(e.target.value)} className={inputClass}>
-                                    {accounts.map(acc => (<option key={acc.id} value={acc.id}>{acc.name}</option>))}
-                                </select>
-                            </div>
-
-                            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer relative">
-                                <input type="file" accept=".csv, .xlsx" onChange={(e) => setImportFile(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                <div className="space-y-2">
-                                    <span className="text-4xl">📄</span>
-                                    <p className="font-medium text-gray-600 dark:text-gray-300">{importFile ? importFile.name : "Drag or click"}</p>
-                                </div>
-                            </div>
-
-                            {importStatus && (
-                                <div className={`p-4 rounded-xl text-sm font-bold text-center ${importStatus.type === 'success' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}>
-                                    {importStatus.msg}
-                                </div>
-                            )}
-
-                            <button type="submit" disabled={!importFile || importLoading || !importAccount} className={`w-full py-4 rounded-2xl text-primary font-bold transition-all ${!importFile || importLoading ? 'bg-gray-300 dark:bg-gray-700' : 'bg-accent hover:bg-accent/90 shadow-lg'}`}>
-                                {importLoading ? 'Processing...' : 'Import Now'}
-                            </button>
-                        </form>
                     </div>
-
-                    {/* EXPORT */}
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 h-fit">
-                        <h2 className="text-xl font-bold text-gray-700 dark:text-white mb-2">Export Data 📤</h2>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Backup all your transactions.</p>
-                        
-                        <button onClick={handleExport} className="w-full py-4 bg-gray-800 dark:bg-gray-700 text-white font-bold rounded-2xl hover:bg-black dark:hover:bg-gray-600 transition-all shadow-lg flex items-center justify-center gap-2">
-                            <span>Download CSV</span>
-                        </button>
-                    </div>
-                </div>
+                </PremiumLock>
             )}
         </main>
     );

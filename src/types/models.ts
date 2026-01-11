@@ -258,6 +258,8 @@ export interface TransactionQueryParams {
   sort_by?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
   // Novos Filtros
   category_id?: number;
+  sub_category_id?: number;
+  tag_id?: number; // NOVO
   account_id?: number;
   transaction_type_id?: number;
   start_date?: string;

@@ -6,10 +6,12 @@ import { useRouter } from 'next/navigation';
 import { getAdminUsers, updateUserRole, getAdminStats, updateUserStatus, deleteUser } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function AdminPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { showNotification } = useNotification();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
 
@@ -42,25 +44,27 @@ export default function AdminPage() {
     mutationFn: ({ userId, role }: { userId: number; role: string }) => updateUserRole(userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      alert('Role updated successfully!');
+      showNotification('success', 'Role updated successfully!');
     },
-    onError: () => alert('Error updating role.'),
+    onError: () => showNotification('error', 'Error updating role.'),
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ userId, isActive }: { userId: number; isActive: boolean }) => updateUserStatus(userId, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      showNotification('success', 'User status updated.');
     },
-    onError: () => alert('Error updating status.'),
+    onError: () => showNotification('error', 'Error updating status.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (userId: number) => deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      showNotification('success', 'User deleted successfully.');
     },
-    onError: () => alert('Error deleting user.'),
+    onError: () => showNotification('error', 'Error deleting user.'),
   });
 
   const handleDeleteClick = (id: number) => {

@@ -16,32 +16,8 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  // Links styling...
-  const linkStyle = (path: string) =>
-    `px-4 py-2 rounded-lg text-sm font-heading font-semibold transition-colors ${
-      pathname === path
-        ? "bg-accent/10 text-accent" // Ativo
-        : "text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 hover:text-darkText dark:hover:text-lightText" // Inativo
-    }`;
-
-  // Esconder navbar em páginas de auth dedicadas (opcional, mas mantemos para limpeza)
+  // Esconder navbar em páginas de auth dedicadas
   if (["/login", "/register", "/forgot-password", "/reset-password"].includes(pathname)) return null;
-
-  const getRoleLabel = (role?: string) => {
-    switch(role) {
-      case 'admin': return 'Admin';
-      case 'premium': return 'Premium';
-      default: return 'Basic';
-    }
-  };
-
-  const getRoleColor = (role?: string) => {
-    switch(role) {
-      case 'admin': return 'text-purple-500';
-      case 'premium': return 'text-yellow-500';
-      default: return 'text-muted';
-    }
-  };
 
   const toggleTheme = () => {
     if (resolvedTheme === 'dark') {
@@ -65,32 +41,6 @@ export default function Navbar() {
               🌍 MoneyMap
             </Link>
           </div>
-
-          {/* MENU CENTRAL (Apenas para Utilizadores Logados) */}
-          {user && (
-            <div className="hidden md:flex items-center space-x-1">
-              <Link href="/" className={linkStyle("/")}>
-                Dashboard
-              </Link>
-              <Link href="/transactions" className={linkStyle("/transactions")}>
-                Transactions
-              </Link>
-              <Link href="/settings" className={linkStyle("/settings")}>
-                Settings ⚙️
-              </Link>
-              {user?.role === "admin" && (
-                <Link
-                  href="/admin"
-                  className={
-                    linkStyle("/admin") +
-                    " text-purple-500 bg-purple-50/20 hover:bg-purple-50/30"
-                  }
-                >
-                  Admin 🛡️
-                </Link>
-              )}
-            </div>
-          )}
 
           {/* LADO DIREITO */}
           <div className="flex items-center gap-4">
@@ -120,48 +70,37 @@ export default function Navbar() {
 
             {/* ESTADO: LOGADO */}
             {user && (
-              <>
-                {/* BOTÃO NOVA TRANSAÇÃO */}
-                <Link
-                  href="/add"
-                  className={`hidden md:flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-heading font-semibold text-primary bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-glow`}
-                >
-                  <span>+</span>
-                  <span className="hidden sm:inline">New</span>
-                </Link>
+              <div className="flex items-center gap-3">
+                
+                {/* BOTÃO "GO TO APP" (Visível em Desktop se estiver na Landing Page ou fora do layout principal) */}
+                <div className="hidden md:block">
+                    <Link 
+                        href="/" 
+                        className="px-4 py-2 rounded-lg bg-accent/10 text-accent text-sm font-bold hover:bg-accent/20 transition-colors"
+                    >
+                        Go to App 🚀
+                    </Link>
+                </div>
 
-                <div className="h-6 w-px bg-secondary dark:bg-gray-700 mx-1 hidden sm:block"></div>
-
-                <div className="flex items-center gap-3">
-                  
-                  {/* LINK PARA PERFIL */}
-                  <Link href="/profile" className="text-right hidden sm:flex flex-col items-end justify-center hover:opacity-80 transition-opacity cursor-pointer">
-                    <p className="text-sm font-heading font-semibold text-darkText dark:text-lightText leading-tight">
-                      {user?.profile?.first_name || user?.email?.split('@')[0]}
-                    </p>
-                    <p className={`text-[10px] font-sans font-medium uppercase tracking-wider ${getRoleColor(user?.role || undefined)}`}>
-                      {getRoleLabel(user?.role || undefined)}
-                    </p>
-                  </Link>
-
-                  {/* ÍCONE PERFIL MOBILE */}
-                  <Link href="/profile" className="sm:hidden p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors">
+                {/* ÍCONE PERFIL MOBILE */}
+                <div className="md:hidden flex items-center gap-3">
+                    <Link href="/profile" className="p-2 rounded-lg text-muted hover:bg-secondary/50 dark:hover:bg-secondary/10 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                     </svg>
-                  </Link>
+                    </Link>
 
-                  <button
+                    <button
                     onClick={logout}
                     className="p-2 rounded-lg text-muted hover:text-error hover:bg-error/10 transition-colors"
                     title="Logout"
-                  >
+                    >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                     </svg>
-                  </button>
+                    </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

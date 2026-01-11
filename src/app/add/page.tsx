@@ -7,6 +7,7 @@ import api, { createTransaction, transferFunds, getSmartShoppingAnalysis, getTag
 import { useAuth } from '@/context/AuthContext';
 import { SmartShoppingAnalysis, Tag } from '@/types/models';
 import Link from 'next/link';
+import PremiumLock from '@/components/PremiumLock';
 
 interface Option {
   id: number;
@@ -392,8 +393,8 @@ export default function AddTransaction() {
             </div>
 
             {/* TAGS (Premium) */}
-            {canUsePremiumFeatures && tags.length > 0 && (
-              <div>
+            <PremiumLock isLocked={!canUsePremiumFeatures} minimal={true}>
+              <div className="mt-4">
                 <label className="block text-xs font-bold text-muted uppercase mb-2">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
@@ -414,42 +415,45 @@ export default function AddTransaction() {
                       {tag.name}
                     </button>
                   ))}
+                  {tags.length === 0 && <p className="text-xs text-muted italic">No tags available.</p>}
                 </div>
               </div>
-            )}
+            </PremiumLock>
 
             {/* RECURRING (Premium) */}
-            {canUsePremiumFeatures && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.is_recurring} 
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-bold text-blue-800 dark:text-blue-200">Repeat this transaction?</span>
-                  </label>
-                </div>
-                
-                {formData.is_recurring && (
-                  <div className="mt-3">
-                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Frequency</label>
-                    <select 
-                      value={formData.frequency} 
-                      onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-                      className="w-full p-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg text-sm outline-none"
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
-                    </select>
+            <div className="mt-4">
+              <PremiumLock isLocked={!canUsePremiumFeatures} minimal={true}>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.is_recurring} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-bold text-blue-800 dark:text-blue-200">Repeat this transaction?</span>
+                    </label>
                   </div>
-                )}
-              </div>
-            )}
+                  
+                  {formData.is_recurring && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-blue-600 dark:text-blue-300 uppercase mb-1">Frequency</label>
+                      <select 
+                        value={formData.frequency} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                        className="w-full p-2 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg text-sm outline-none"
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </PremiumLock>
+            </div>
 
             {/* SMART SHOPPING */}
             {canUseSmartShopping && !isInvestmentType && (
